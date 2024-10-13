@@ -1,32 +1,22 @@
 // Load environment variables from .env file
 require('dotenv').config();
-
 const express = require('express');
+const cors = require('cors');
 const pool = require('./db');
 const port = process.env.PORT || 1337; // Fallback to 1337 if PORT is not defined
-
 const app = express();
+
+app.use(cors());
 app.use(express.json());
 
-app.get('/', (req, res) => {
-    res.sendStatus(200);
-});
+//SALES ROUTES//
 
-app.post('/', (req, res) => {
-    const { name, location } = req.body;
-    res.status(200).send({
-        message: `YOUR KEYS WERE ${name}, ${location}`
-    });
-});
+// create an order
 
-app.get('/setup', async (req, res) => {
-    try {
-        await pool.query('CREATE TABLE schools( id SERIAL)')
-        res.sendStatus(200); // It's good practice to send a response on success
-    } catch (err) {
-        console.log(err);
-        res.sendStatus(500);
-    }
-})
+// get an order
+
+// fulfill an order
+
+//
 
 app.listen(port, () => console.log(`Server has started on port ${port}`));
