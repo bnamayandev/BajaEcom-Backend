@@ -17,6 +17,20 @@ app.use(express.json());
 
 // fulfill an order
 
-//
+//USER ROUTES//
+
+// get users
+
+//create a user
+
+// delete a user
+
+//INVENTORY ROUTES//
+
+// get total inventory
+
+// add new product
+
+// get rid of inventory
 
 app.listen(port, () => console.log(`Server has started on port ${port}`));
