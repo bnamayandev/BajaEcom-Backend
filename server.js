@@ -1,13 +1,19 @@
 // Load environment variables from .env file
 require('dotenv').config();
 const express = require('express');
+const helmet = require('helmet');
 const cors = require('cors');
+const bcrypt = require('bcrypt');
+const morgan = require('morgan');
 const pool = require('./db');
 const port = process.env.PORT || 1337; // Fallback to 1337 if PORT is not defined
 const app = express();
 
+// Middleware
 app.use(cors());
+app.use(helmet());
 app.use(express.json());
+app.use(morgan('combined'));
 
 //SALES ROUTES//
 
@@ -50,24 +56,29 @@ app.get('/sales/:id', async (req, res) => {
 app.put('/sales/:id/fulfill', async (req, res) => {
     try {
         const { id } = req.params;
+        const { staff_signoff } = req.body;
         const fulfillment_time = new Date().toISOString();
+
         const updateOrder = await pool.query(
             `UPDATE sales 
-             SET status = 'fulfilled', fulfillment_time = $1 
-             WHERE sale_id = $2 
+             SET status = 'fulfilled',
+                fullfillment_time = $1,
+                staff_signoff = $2,
+             WHERE sale_id = $3 
              RETURNING *`,
-            [fulfillment_time, id]
+            [fulfillment_time, staff_signoff, id]
         );
+
         if (updateOrder.rows.length === 0) {
             return res.status(404).json({ error: 'Order not found' });
         }
+
         res.json(updateOrder.rows[0]);
     } catch (err) {
         console.error(err.message);
         res.status(500).json({ error: 'Server error' });
     }
 });
-
 
 //USER ROUTES//
 
@@ -85,12 +96,18 @@ app.get('/users', async (req, res) => {
 // Create a new user
 app.post('/users', async (req, res) => {
     try {
-        const { username, first_name, last_name, phone_number } = req.body;
+        const { username, first_name, last_name, phone_number, password } = req.body;
+
+        // Hashing the password
+        const saltRounds = 10;
+        const hashed_password = await bcrypt.hash(passwrod, saltRounds);
+
+        // Insert user into the database
         const newUser = await pool.query(
-            `INSERT INTO users (username, first_name, last_name, phone_number) 
-             VALUES ($1, $2, $3, $4) 
+            `INSERT INTO users (username, first_name, last_name, phone_number, password) 
+             VALUES ($1, $2, $3, $4, $5) 
              RETURNING *`,
-            [username, first_name, last_name, phone_number]
+            [username, first_name, last_name, phone_number, hashed_password]
         );
         res.json(newUser.rows[0]);
     } catch (err) {
@@ -99,6 +116,30 @@ app.post('/users', async (req, res) => {
     }
 });
 
+// User login
+app.post('/login', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+
+        // Select user by username
+        const user = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
+
+        if (user.rows.length == 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // compare has password with the user's input
+        const validPassword = await bcrypt.compare(password, user.rows[0].password);
+        if (!validPassword) {
+            return res.status(401).json({ error: 'Invalid password' });
+        }
+
+        res.json({ message: 'Login successful' });
+    } catch (err) {
+        console.log(err.message);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
 // Delete a user by ID
 app.delete('/users/:id', async (req, res) => {
     try {
