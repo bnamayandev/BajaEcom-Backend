@@ -100,7 +100,7 @@ app.post('/users', async (req, res) => {
 
         // Hashing the password
         const saltRounds = 10;
-        const hashed_password = await bcrypt.hash(passwrod, saltRounds);
+        const hashed_password = await bcrypt.hash(password, saltRounds);
 
         // Insert user into the database
         const newUser = await pool.query(
