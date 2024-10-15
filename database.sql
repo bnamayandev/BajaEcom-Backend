@@ -14,15 +14,16 @@ CREATE TABLE IF NOT EXISTS users (
     password VARCHAR(255) NOT NULL                  -- Password (hashed)
 );
 
--- Create the inventory table
+-- Create the inventory table with the added price column
 CREATE TABLE IF NOT EXISTS inventory (
     item_id SERIAL PRIMARY KEY,                     -- Auto-incrementing primary key
     clothing_type VARCHAR(100) NOT NULL,            -- Type of clothing (e.g., 'jacket', 'graphic tshirt')
     size VARCHAR(10) NOT NULL,                      -- Size (e.g., 'S', 'M', 'L', 'XL')
-    quantity_available INT NOT NULL                 -- Available quantity for that item and size
+    quantity_available INT NOT NULL,                -- Available quantity for that item and size
+    price NUMERIC(10, 2) NOT NULL DEFAULT 0         -- Price of the item with 2 decimal precision
 );
 
--- Create the sales table
+-- Create the sales table with the added order_total column
 CREATE TABLE IF NOT EXISTS sales (
     sale_id SERIAL PRIMARY KEY,                     -- Auto-incrementing primary key
     user_id INT REFERENCES users(user_id) ON DELETE CASCADE, -- Foreign key to the users table
@@ -34,5 +35,6 @@ CREATE TABLE IF NOT EXISTS sales (
     pickup_location VARCHAR(100) NOT NULL,          -- Pickup location (e.g., store location)
     status VARCHAR(20) NOT NULL DEFAULT 'not fulfilled', -- Status of the order ('fulfilled' or 'not fulfilled')
     fulfillment_time TIMESTAMP NULL,                -- Time when the order was fulfilled (if applicable)
-    staff_signoff VARCHAR(100) NULL                 -- Name of the staff member who fulfilled the order (if applicable)
+    staff_signoff VARCHAR(100) NULL,                -- Name of the staff member who fulfilled the order (if applicable)
+    order_total NUMERIC(10, 2) NOT NULL DEFAULT 0   -- Total price of the order
 );

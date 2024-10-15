@@ -21,18 +21,35 @@ app.use(morgan('combined'));
 app.post('/sales', async (req, res) => {
     try {
         const { user_id, item_id, order_quantity, order_size, pickup_date_time, pickup_location } = req.body;
-        const newOrder = await pool.query(
-            `INSERT INTO sales (user_id, item_id, order_quantity, order_size, pickup_date_time, pickup_location, status) 
-             VALUES ($1, $2, $3, $4, $5, $6, 'not fulfilled') 
-             RETURNING *`,
-            [user_id, item_id, order_quantity, order_size, pickup_date_time, pickup_location]
+
+        // Fetch the price of the item from the inventory table
+        const item = await pool.query(
+            `SELECT price FROM inventory WHERE item_id = $1`,
+            [item_id]
         );
+
+        if (item.rows.length === 0) {
+            return res.status(404).json({ error: 'Item not found' });
+        }
+
+        const price = item.rows[0].price;
+        const order_total = price * order_quantity;
+
+        // Insert the new order into the sales table
+        const newOrder = await pool.query(
+            `INSERT INTO sales (user_id, item_id, order_quantity, order_size, pickup_date_time, pickup_location, status, order_total) 
+             VALUES ($1, $2, $3, $4, $5, $6, 'not fulfilled', $7) 
+             RETURNING *`,
+            [user_id, item_id, order_quantity, order_size, pickup_date_time, pickup_location, order_total]
+        );
+
         res.json(newOrder.rows[0]);
     } catch (err) {
         console.error(err.message);
         res.status(500).json({ error: 'Server error' });
     }
 });
+
 
 // Get an order by ID
 app.get('/sales/:id', async (req, res) => {
