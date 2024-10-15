@@ -18,10 +18,10 @@ We will use two repositories for this project:
 
 When contributing to the project, please follow these steps:
 
-### 1.1 Fork the repository:
-Each team member should first **fork** the repository by navigating to the repository page on GitHub and clicking the "Fork" button in the top right. This will create a copy of the repository under your own GitHub account. Make sure you deselect the checkbox that say "Only fork 'main' branch".
+### 1.1 Fork the repositories:
+Each team member should first **fork** the repository by navigating to the repository page on GitHub and clicking the "Fork" button in the top right. This will create a copy of the repository under your own GitHub account. Make sure you deselect the checkbox that say "Only fork 'main' branch". Make sure you fork both frontend and backend.
 
-### 1.2 Clone your fork:
+### 1.2 Clone your forks:
 Once you've forked the repository, clone your copy to your local machine,
 I would recommend having a folder titled "bajaecom" that has both the frontend and backend cloned inside. This allows you to seamlessly transition between the two during development.
 You can clone like this:
@@ -32,6 +32,42 @@ cd bajaecom
 git clone https://github.com/<your-username>/bajaecom-backend.git
 git clone https://github.com/<your-username>/bajaecom-frontend.git
 ```
+
+### 1.3 Opening the Repos
+Open the cloned repos in your prefered code editor, and make sure you are in the right branch by running the following command in your terminal:
+```git checkout dev```
+
+### 1.4 Sync with Upstream Repo
+add the original repository as an upstream remote
+- backend: ```git remote add upstream https://github.com/WesternBajaRacing/BajaEcom-Backend.git```
+- frontend: ```git remote add upstream https://github.com/WesternBajaRacing/BajaEcom-Frontend.git```
+this allows your forked repository to stay in sync with the original repository (upstream repository).
+
+### 1.5 Create Feature Branch
+once in the 'dev' branch, run this command to build a new feature branch:
+```bash
+git checkout -b feature-<enter-branch-name-here>
+```
+an example of a branch name would be "feature-members-view". You can now start developing, once you are done, commit and push your changes to origin.
+
+### 1.6 Merge Feature Branch with Dev
+Switch back to the dev branch:
+```bash
+git checkout dev
+```
+Merge your feature branch:
+```bash
+git merge feature-<your-feature-name>
+```
+Then you can push the updated dev branch
+
+### 1.7 Submit a Pull Request
+finally, you can submit a pr:
+- Go to your forked repository on GitHub.
+- Click on the Pull Requests tab.
+- Click the New pull request button.
+- Select your fork's dev branch as the compare branch and the original repository's dev branch as the base branch.
+- Review your changes and submit the pull request with a descriptive title and message.
 
 ## Step 2: Setting Up Backend
 Ensure that your terminal is in bajaecom-backend
