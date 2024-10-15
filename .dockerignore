@@ -1,0 +1,27 @@
+# Node.js dependencies
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Logs
+*.log
+logs
+
+# Environment variables file
+.env
+
+# Docker files
+Dockerfile
+docker-compose.yml
+
+# git files
+.git
+.gitignore
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# IDE-specific files
+.vscode/
+.idea/
