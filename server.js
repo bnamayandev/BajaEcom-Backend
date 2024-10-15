@@ -6,7 +6,7 @@ const cors = require('cors');
 const bcrypt = require('bcrypt');
 const morgan = require('morgan');
 const pool = require('./db');
-const port = process.env.PORT || 1337; // Fallback to 1337 if PORT is not defined
+const port = process.env.PORT || 3000; // Fallback to 1337 if PORT is not defined
 const app = express();
 
 // Middleware
@@ -63,7 +63,7 @@ app.put('/sales/:id/fulfill', async (req, res) => {
             `UPDATE sales 
              SET status = 'fulfilled',
                 fullfillment_time = $1,
-                staff_signoff = $2,
+                staff_signoff = $2
              WHERE sale_id = $3 
              RETURNING *`,
             [fulfillment_time, staff_signoff, id]
