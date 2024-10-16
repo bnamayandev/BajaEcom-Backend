@@ -94,8 +94,14 @@ You will have to run the backend with docker by running this command in your ter
 ```docker-compose up --build```
 
 This will start both the PostgreSQL database and the backend server.
-
 The backend API will now be running on http://localhost:13000 (based on the Docker ports configuration).
+
+#### Docker-compose down
+I recommend that after you're done with your session, you run the command:
+```bash
+docker-compose down
+```
+This essentially stops the containers from running, and also removes them from your machine. You will have to re-build the container with ```docker-compose up --build``` however, rebuilding the container ensures that you have the newest version of the backend, in case it changes.
 
 ## Step 3: Set Up Frontend
 Navigate to frontend from terminal
