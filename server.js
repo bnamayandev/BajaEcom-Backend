@@ -1,6 +1,7 @@
 // Load environment variables from .env file
 require('dotenv').config();
 const express = require('express');
+const jwt = require('jsonwebtoken');
 const helmet = require('helmet');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
@@ -15,10 +16,27 @@ app.use(helmet());
 app.use(express.json());
 app.use(morgan('combined'));
 
+const authenticateToken = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
+        return res.sendStatus(401);
+    }
+
+    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+        if (err) {
+            return res.sendStatus(403);
+        }
+        req.user = user;
+        next();
+    });
+};
+
 //SALES ROUTES//
 
 // Create an order
-app.post('/sales', async (req, res) => {
+app.post('/sales', authenticateToken, async (req, res) => {
     try {
         const { user_id, item_id, order_quantity, order_size, pickup_date_time, pickup_location } = req.body;
 
@@ -52,7 +70,7 @@ app.post('/sales', async (req, res) => {
 
 
 // Get an order by ID
-app.get('/sales/:id', async (req, res) => {
+app.get('/sales/:id', authenticateToken, async (req, res) => {
     try {
         const { id } = req.params;
         const order = await pool.query(
@@ -70,7 +88,7 @@ app.get('/sales/:id', async (req, res) => {
 });
 
 // Fulfill an order (mark as fulfilled)
-app.put('/sales/:id/fulfill', async (req, res) => {
+app.put('/sales/:id/fulfill', authenticateToken, async (req, res) => {
     try {
         const { id } = req.params;
         const { staff_signoff } = req.body;
@@ -100,7 +118,7 @@ app.put('/sales/:id/fulfill', async (req, res) => {
 //USER ROUTES//
 
 // Get all users
-app.get('/users', async (req, res) => {
+app.get('/users', authenticateToken, async (req, res) => {
     try {
         const users = await pool.query('SELECT * FROM users');
         res.json(users.rows);
@@ -151,14 +169,19 @@ app.post('/login', async (req, res) => {
             return res.status(401).json({ error: 'Invalid password' });
         }
 
-        res.json({ message: 'Login successful' });
+        // Generate a jwt 
+        const token = jwt.sign({ user_id: user.rows[0].user_id }, process.env.JWT_SECRET, {
+            expiresIn: '1h',
+        });
+
+        res.json({ message: 'Login successful', token });
     } catch (err) {
         console.log(err.message);
         res.status(500).json({ error: 'Server error' });
     }
 });
 // Delete a user by ID
-app.delete('/users/:id', async (req, res) => {
+app.delete('/users/:id', authenticateToken, async (req, res) => {
     try {
         const { id } = req.params;
         const deleteUser = await pool.query(
@@ -179,7 +202,7 @@ app.delete('/users/:id', async (req, res) => {
 //INVENTORY ROUTES//
 
 // Get total inventory
-app.get('/inventory', async (req, res) => {
+app.get('/inventory', authenticateToken, async (req, res) => {
     try {
         const inventory = await pool.query('SELECT * FROM inventory');
         res.json(inventory.rows);
@@ -190,7 +213,7 @@ app.get('/inventory', async (req, res) => {
 });
 
 // Add new product to inventory
-app.post('/inventory', async (req, res) => {
+app.post('/inventory', authenticateToken, async (req, res) => {
     try {
         const { clothing_type, size, quantity_available } = req.body;
         const newProduct = await pool.query(
@@ -207,7 +230,7 @@ app.post('/inventory', async (req, res) => {
 });
 
 // Delete inventory item by ID
-app.delete('/inventory/:id', async (req, res) => {
+app.delete('/inventory/:id', authenticateToken, async (req, res) => {
     try {
         const { id } = req.params;
         const deleteInventory = await pool.query(
