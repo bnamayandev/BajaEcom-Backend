@@ -151,6 +151,7 @@ app.post('/users', async (req, res) => {
     }
 });
 
+
 // User login
 app.post('/login', async (req, res) => {
     try {
@@ -163,23 +164,40 @@ app.post('/login', async (req, res) => {
             return res.status(404).json({ error: 'User not found' });
         }
 
-        // compare has password with the user's input
+        // Log the retrieved user data
+        console.log('User found:', user.rows[0]);
+
+        // Log the hashed password
+        console.log('Hashed Password:', user.rows[0].password);
+
+        // Compare the hashed password with the user's input
         const validPassword = await bcrypt.compare(password, user.rows[0].password);
+        console.log('Password valid:', validPassword);
+
         if (!validPassword) {
             return res.status(401).json({ error: 'Invalid password' });
         }
 
-        // Generate a jwt 
+        // Log the JWT_SECRET to ensure it's correctly defined
+        console.log('JWT_SECRET:', process.env.JWT_SECRET);
+
+        // Generate a jwt
         const token = jwt.sign({ user_id: user.rows[0].user_id }, process.env.JWT_SECRET, {
             expiresIn: '1h',
         });
 
+        // Log the generated token
+        console.log('Generated token:', token);
+
         res.json({ message: 'Login successful', token });
+
     } catch (err) {
-        console.log(err.message);
-        res.status(500).json({ error: 'Server error' });
+        console.error('Error during login:', err.message);
+        console.error(err.stack);   // Log the full stack trace for more details
+        res.status(500).json({ error: 'Server error', details: err.message });
     }
 });
+
 // Delete a user by ID
 app.delete('/users/:id', authenticateToken, async (req, res) => {
     try {
