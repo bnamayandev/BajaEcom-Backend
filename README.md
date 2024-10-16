@@ -35,7 +35,9 @@ git clone https://github.com/<your-username>/bajaecom-frontend.git
 
 ### 1.3 Opening the Repos
 Open the cloned repos in your prefered code editor, and make sure you are in the right branch by running the following command in your terminal:
-```git checkout dev```
+```bash
+git checkout dev
+```
 
 ### 1.4 Sync with Upstream Repo
 add the original repository as an upstream remote
@@ -91,7 +93,9 @@ PORT={SERVERPORT}
 
 ### 2.2 Run Backend With Docker
 You will have to run the backend with docker by running this command in your terminal.
-```docker-compose up --build```
+```bash
+docker-compose up --build
+```
 
 This will start both the PostgreSQL database and the backend server.
 The backend API will now be running on http://localhost:13000 (based on the Docker ports configuration).
