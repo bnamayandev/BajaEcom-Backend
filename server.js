@@ -75,9 +75,9 @@ app.get('/sales', authenticateToken, async (req, res) => {
         res.json(allSales.rows);
     } catch (err) {
         console.error(err.message);
-        res.status(500).json({ error: 'Server error' });
+        res.status(500).json({ error: 'Server error: ${err.message}' });
     }
-})
+});
 
 
 // Get an order by ID
