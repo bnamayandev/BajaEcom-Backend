@@ -68,6 +68,17 @@ app.post('/sales', authenticateToken, async (req, res) => {
     }
 });
 
+// Get all orders
+app.get('/sales', authenticateToken, async (req, res) => {
+    try {
+        const allSales = await pool.query(`SELECT * FROM SALES`);
+        res.json(allSales.rows);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ error: 'Server error' });
+    }
+})
+
 
 // Get an order by ID
 app.get('/sales/:id', authenticateToken, async (req, res) => {
