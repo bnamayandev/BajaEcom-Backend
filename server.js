@@ -38,7 +38,7 @@ const authenticateToken = (req, res, next) => {
 // Create an order
 app.post('/sales', authenticateToken, async (req, res) => {
     try {
-        const { user_id, item_id, order_quantity, order_size, pickup_date_time, pickup_location } = req.body;
+        const { user_id, item_id, order_quantity, order_size, pickup_date_time } = req.body;
 
         // Fetch the price of the item from the inventory table
         const item = await pool.query(
@@ -55,10 +55,10 @@ app.post('/sales', authenticateToken, async (req, res) => {
 
         // Insert the new order into the sales table
         const newOrder = await pool.query(
-            `INSERT INTO sales (user_id, item_id, order_quantity, order_size, pickup_date_time, pickup_location, status, order_total) 
-             VALUES ($1, $2, $3, $4, $5, $6, 'not fulfilled', $7) 
+            `INSERT INTO sales (user_id, item_id, order_quantity, order_size, pickup_date_time, order_total) 
+             VALUES ($1, $2, $3, $4, $5, 'not fulfilled', $6) 
              RETURNING *`,
-            [user_id, item_id, order_quantity, order_size, pickup_date_time, pickup_location, order_total]
+            [user_id, item_id, order_quantity, order_size, pickup_date_time, order_total]
         );
 
         res.json(newOrder.rows[0]);
