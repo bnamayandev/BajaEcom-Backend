@@ -26,7 +26,6 @@ CREATE TABLE IF NOT EXISTS sales (
     order_size VARCHAR(10) NOT NULL,
     order_date_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     pickup_date_time TIMESTAMP NOT NULL,
-    pickup_location VARCHAR(100) NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'not fulfilled',
     fulfillment_time TIMESTAMP NULL,
     staff_signoff VARCHAR(100) NULL,

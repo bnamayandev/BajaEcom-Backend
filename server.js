@@ -38,7 +38,7 @@ const authenticateToken = (req, res, next) => {
 // Create an order
 app.post('/sales', authenticateToken, async (req, res) => {
     try {
-        const { user_id, item_id, order_quantity, order_size, pickup_date_time, pickup_location } = req.body;
+        const { user_id, item_id, order_quantity, order_size, pickup_date_time } = req.body;
 
         // Fetch the price of the item from the inventory table
         const item = await pool.query(
@@ -55,16 +55,28 @@ app.post('/sales', authenticateToken, async (req, res) => {
 
         // Insert the new order into the sales table
         const newOrder = await pool.query(
-            `INSERT INTO sales (user_id, item_id, order_quantity, order_size, pickup_date_time, pickup_location, status, order_total) 
-             VALUES ($1, $2, $3, $4, $5, $6, 'not fulfilled', $7) 
+            `INSERT INTO sales (user_id, item_id, order_quantity, order_size, pickup_date_time, status, order_total) 
+             VALUES ($1, $2, $3, $4, $5, 'not fulfilled', $6) 
              RETURNING *`,
-            [user_id, item_id, order_quantity, order_size, pickup_date_time, pickup_location, order_total]
+            [user_id, item_id, order_quantity, order_size, pickup_date_time, order_total]
         );
 
         res.json(newOrder.rows[0]);
     } catch (err) {
         console.error(err.message);
         res.status(500).json({ error: 'Server error' });
+    }
+});
+
+
+// Get all orders
+app.get('/sales', authenticateToken, async (req, res) => {
+    try {
+        const allSales = await pool.query(`SELECT * FROM SALES`);
+        res.json(allSales.rows);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ error: 'Server error: ${err.message}' });
     }
 });
 
@@ -130,8 +142,13 @@ app.get('/users', authenticateToken, async (req, res) => {
 
 // Create a new user
 app.post('/users', async (req, res) => {
+    console.log(req.body);
     try {
         const { username, first_name, last_name, phone_number, password } = req.body;
+
+        if (!password) {
+            return res.status(400).json({ error: "Password is required" });
+        }
 
         // Hashing the password
         const saltRounds = 10;
@@ -150,7 +167,6 @@ app.post('/users', async (req, res) => {
         res.status(500).json({ error: 'Server error' });
     }
 });
-
 
 // User login
 app.post('/login', async (req, res) => {
