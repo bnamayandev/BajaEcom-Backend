@@ -40,23 +40,21 @@ app.post('/sales', authenticateToken, async (req, res) => {
     try {
         const { user_id, item_id, order_quantity, order_size, pickup_date_time } = req.body;
 
-        // Fetch the price of the item from the inventory table
-        const item = await pool.query(
-            `SELECT price FROM inventory WHERE item_id = $1`,
+        const itemResult = await pool.query(
+            'SELECT price FROM inventory WHERE item_id = $1',
             [item_id]
         );
 
-        if (item.rows.length === 0) {
+        if (itemResult.rows.length === 0) {
             return res.status(404).json({ error: 'Item not found' });
         }
 
-        const price = item.rows[0].price;
+        const price = itemResult.rows[0].price;
         const order_total = price * order_quantity;
 
-        // Insert the new order into the sales table
         const newOrder = await pool.query(
-            `INSERT INTO sales (user_id, item_id, order_quantity, order_size, pickup_date_time, status, order_total) 
-             VALUES ($1, $2, $3, $4, $5, 'not fulfilled', $6) 
+            `INSERT INTO sales (user_id, item_id, order_quantity, order_size, pickup_date_time, status, order_total)
+             VALUES ($1, $2, $3, $4, $5, 'not fulfilled', $6)
              RETURNING *`,
             [user_id, item_id, order_quantity, order_size, pickup_date_time, order_total]
         );
@@ -67,6 +65,7 @@ app.post('/sales', authenticateToken, async (req, res) => {
         res.status(500).json({ error: 'Server error' });
     }
 });
+
 
 
 // Get all orders
@@ -199,7 +198,7 @@ app.post('/login', async (req, res) => {
 
         // Generate a jwt
         const token = jwt.sign({ user_id: user.rows[0].user_id }, process.env.JWT_SECRET, {
-            expiresIn: '1h',
+            expiresIn: '100h',
         });
 
         // Log the generated token
