@@ -144,6 +144,16 @@ app.post('/sales', authenticateToken, async (req, res) => {
     }
 });
 
+app.get('/sales', authenticateToken, async (req, res) => {
+    try {
+        const sales = await pool.query('SELECT * FROM sales');
+        res.json(sales.rows);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 // INVENTORY ROUTES
 
 // Get total inventory
