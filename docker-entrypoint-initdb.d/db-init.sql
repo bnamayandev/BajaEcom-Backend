@@ -12,8 +12,7 @@ CREATE TABLE IF NOT EXISTS users (
 INSERT INTO users (username, first_name, last_name, phone_number, password) VALUES
 ('john_doe', 'John', 'Doe', '123-456-7890', '$2b$10$4mJChz1GZjEnETQOCbg0fOVu4/RPGXey45LwrDt5OWlTC4fdDrJlK'), -- password: password123
 ('jane_smith', 'Jane', 'Smith', '987-654-3210', '$2b$10$UIrA5UYPgYUd7BR.jFZxsuV1zSy2/9BYQ6EwJMb8poVRQ96M4yCUO'), -- password: securepassword
-('alice_johnson', 'Alice', 'Johnson', '555-123-4567', '$2b$10$0NVDAaFBGz/FmP8X.x1HuO3/7YopGywxeSv8mQm9blV07aYmzQhuu'); -- password: alicepass
-~
+('alice_johnson', 'Alice', 'Johnson', '555-123-4567', '$2b$10$0NVDAaFBGz/FmP8X.x1HuO3/7YopGywxeSv8mQm9blV07aYmzQhuu'); -- password: alicepasss~
 
 -- Create the inventory table
 CREATE TABLE IF NOT EXISTS inventory (
@@ -22,14 +21,16 @@ CREATE TABLE IF NOT EXISTS inventory (
     size VARCHAR(10) NOT NULL,
     quantity_available INT NOT NULL,
     price NUMERIC(10, 2) NOT NULL DEFAULT 0
+    itemPhoto VARCHAR(20) NOT NULL
+    
 );
 
 -- Insert sample inventory items
-INSERT INTO inventory (clothing_type, size, quantity_available, price) VALUES
-('Graphic T-Shirt', 'M', 50, 19.99),
-('Graphic T-Shirt', 'L', 25, 19.99),
-('Baseball Cap', 'L', 15, 9.99),
-('Hoodie', 'XL', 10, 29.99);
+INSERT INTO inventory (clothing_type, size, quantity_available, price, itemPhoto) VALUES
+('Graphic T-Shirt', 'M', 50, 19.99, 'tshirt.jpg'),
+('Graphic T-Shirt', 'L', 25, 19.99, 'tshirt.jpg'),
+('Baseball Cap', 'L', 15, 9.99, 'cap.jpg'),
+('Hoodie', 'XL', 10, 29.99, 'hoodie.jpg');
 
 -- Create the sales table
 CREATE TABLE IF NOT EXISTS sales (
