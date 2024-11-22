@@ -167,5 +167,43 @@ app.get('/inventory', authenticateToken, async (req, res) => {
     }
 });
 
+// Fulfill/unfulfill
+app.put('/sales/:id/toggle-fulfillment', authenticateToken, async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        // Log the sale ID being processed
+        console.log(`Processing toggle for sale_id: ${id}`);
+
+        // Check if the sale exists
+        const result = await pool.query('SELECT status FROM sales WHERE sale_id = $1', [id]);
+        console.log('Query result:', result.rows); // Log the result
+
+        if (result.rows.length === 0) {
+            console.error(`Order with sale_id ${id} not found`);
+            return res.status(404).json({ error: 'Order not found' });
+        }
+
+        const currentStatus = result.rows[0].status;
+        console.log(`Current status: ${currentStatus}`);
+
+        // Determine new status
+        const newStatus = currentStatus === 'fulfilled' ? 'not fulfilled' : 'fulfilled';
+        console.log(`New status: ${newStatus}`);
+
+        // Update the status in the database
+        const updateResult = await pool.query(
+            'UPDATE sales SET status = $1, fulfillment_time = CASE WHEN $1 = \'fulfilled\' THEN CURRENT_TIMESTAMP ELSE NULL END WHERE sale_id = $2 RETURNING *',
+            [newStatus, id]
+        );
+        console.log('Update result:', updateResult.rows); // Log the updated row
+
+        res.json({ message: 'Order status updated successfully', order: updateResult.rows[0] });
+    } catch (err) {
+        console.error('Error toggling fulfillment status:', err.message, err.stack); // Log detailed error
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 // Start the server
 app.listen(port, () => console.log(`Server has started on port ${port}`));
