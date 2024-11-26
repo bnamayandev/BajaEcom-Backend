@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS sales (
 
 -- Insert sample sales orders
 INSERT INTO sales (user_id, user_name, item_id, order_quantity, order_size, pickup_date_time, status, order_total) VALUES
-(1, 'penis', 1, 2, 'M', '2024-12-15 10:00:00', 'not fulfilled', 39.98),
-(2, 'penis2', 3, 1, 'L', '2024-12-20 14:00:00', 'not fulfilled', 9.99),
-(3, 'penis3', 2, 3, 'L', '2024-12-25 09:00:00', 'fulfilled', 59.97),
-(1, 'penis4', 4, 1, 'XL', '2024-12-30 16:00:00', 'not fulfilled', 29.99);
+(1, 'kian123', 1, 2, 'M', '2024-12-15 10:00:00', 'not fulfilled', 39.98),
+(2, 'kian1234', 3, 1, 'L', '2024-12-20 14:00:00', 'not fulfilled', 9.99),
+(3, 'kian1235', 2, 3, 'L', '2024-12-25 09:00:00', 'fulfilled', 59.97),
+(1, 'kian1236', 4, 1, 'XL', '2024-12-30 16:00:00', 'not fulfilled', 29.99);
