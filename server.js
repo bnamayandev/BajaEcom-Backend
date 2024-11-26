@@ -191,10 +191,9 @@ app.put('/sales/:id/toggle-fulfillment', authenticateToken, async (req, res) => 
         const newStatus = currentStatus === 'fulfilled' ? 'not fulfilled' : 'fulfilled';
         console.log(`New status: ${newStatus}`);
 
-        // Update the status in the database
         const updateResult = await pool.query(
-            'UPDATE sales SET status = $1, fulfillment_time = CASE WHEN $1 = \'fulfilled\' THEN CURRENT_TIMESTAMP ELSE NULL END WHERE sale_id = $2 RETURNING *',
-            [newStatus, id]
+            'UPDATE sales SET status = $1, fulfillment_time = CASE WHEN $1 = $3 THEN CURRENT_TIMESTAMP ELSE NULL END WHERE sale_id = $2 RETURNING *',
+            [newStatus, id, 'fulfilled']
         );
         console.log('Update result:', updateResult.rows); // Log the updated row
 
