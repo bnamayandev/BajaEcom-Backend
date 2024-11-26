@@ -119,7 +119,7 @@ app.get('/users', authenticateToken, async (req, res) => {
 // Create an order
 app.post('/sales', authenticateToken, async (req, res) => {
     try {
-        const { user_id, item_id, order_quantity, order_size, pickup_date_time } = req.body;
+        const { user_id, user_name, item_id, order_quantity, order_size, pickup_date_time } = req.body;
 
         const itemResult = await pool.query('SELECT price FROM inventory WHERE item_id = $1', [item_id]);
 
@@ -131,10 +131,10 @@ app.post('/sales', authenticateToken, async (req, res) => {
         const order_total = price * order_quantity;
 
         const newOrder = await pool.query(
-            `INSERT INTO sales (user_id, item_id, order_quantity, order_size, pickup_date_time, status, order_total)
+            `INSERT INTO sales (user_id, user_name, item_id, order_quantity, order_size, pickup_date_time, status, order_total)
              VALUES ($1, $2, $3, $4, $5, 'not fulfilled', $6)
              RETURNING *`,
-            [user_id, item_id, order_quantity, order_size, pickup_date_time, order_total]
+            [user_id, user_name, item_id, order_quantity, order_size, pickup_date_time, order_total]
         );
 
         res.json(newOrder.rows[0]);
