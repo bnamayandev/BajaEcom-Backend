@@ -254,7 +254,7 @@ app.get('/inventory', authenticateToken, async (req, res) => {
 // Fulfill/unfulfill an order
 app.put('/orders/:id/toggle-fulfillment', authenticateToken, async (req, res) => {
     let { id } = req.params;
-    const { staff_signoff } = req.body;
+    let { staff_signoff } = req.body;
 
     try {
         id = parseInt(id, 10);
@@ -279,14 +279,17 @@ app.put('/orders/:id/toggle-fulfillment', authenticateToken, async (req, res) =>
             if (!staff_signoff || staff_signoff.trim() === '') {
                 return res.status(400).json({ error: 'Staff signoff is required when fulfilling an order' });
             }
+        } else {
+            // Ensure staff_signoff is null when not fulfilling
+            staff_signoff = null;
         }
 
         // Update the order with the new status and staff_signoff
         const updateResult = await pool.query(
             `UPDATE orders
-             SET status = $1,
-                 fulfillment_time = CASE WHEN $1 = 'fulfilled' THEN CURRENT_TIMESTAMP ELSE NULL END,
-                 staff_signoff = CASE WHEN $1 = 'fulfilled' THEN $2 ELSE NULL END
+             SET status = $1::VARCHAR(20),
+                 fulfillment_time = CASE WHEN $1::VARCHAR(20) = 'fulfilled'::VARCHAR(20) THEN CURRENT_TIMESTAMP ELSE NULL END,
+                 staff_signoff = CASE WHEN $1::VARCHAR(20) = 'fulfilled'::VARCHAR(20) THEN $2 ELSE NULL END
              WHERE order_id = $3
              RETURNING *`,
             [newStatus, staff_signoff, id]
