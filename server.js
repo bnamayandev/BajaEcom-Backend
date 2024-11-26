@@ -170,6 +170,7 @@ app.get('/inventory', authenticateToken, async (req, res) => {
 // Fulfill/unfulfill
 app.put('/sales/:id/toggle-fulfillment', authenticateToken, async (req, res) => {
     let { id } = req.params;
+    const { staff_signoff } = req.body;
 
     try {
         console.log(`Processing toggle for sale_id: ${id}`);
@@ -197,14 +198,22 @@ app.put('/sales/:id/toggle-fulfillment', authenticateToken, async (req, res) => 
         const newStatus = currentStatus === 'fulfilled' ? 'not fulfilled' : 'fulfilled';
         console.log(`New status: ${newStatus}`);
 
-        // Update the sale with the new status
+        // If setting to 'fulfilled', require staff_signoff
+        if (newStatus === 'fulfilled') {
+            if (!staff_signoff || staff_signoff.trim() === '') {
+                return res.status(400).json({ error: 'Staff signoff is required when fulfilling an order' });
+            }
+        }
+
+        // Update the sale with the new status and staff_signoff
         const updateResult = await pool.query(
             `UPDATE sales
              SET status = $1::VARCHAR,
-                 fulfillment_time = CASE WHEN $1 = 'fulfilled' THEN CURRENT_TIMESTAMP ELSE NULL END
+                 fulfillment_time = CASE WHEN $1 = 'fulfilled' THEN CURRENT_TIMESTAMP ELSE NULL END,
+                 staff_signoff = CASE WHEN $1 = 'fulfilled' THEN $3::VARCHAR ELSE NULL END
              WHERE sale_id = $2::INTEGER
              RETURNING *`,
-            [newStatus, id]
+            [newStatus, id, staff_signoff]
         );
         console.log('Update result:', updateResult.rows);
 
