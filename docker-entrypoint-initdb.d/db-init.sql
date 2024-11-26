@@ -1,4 +1,4 @@
--- Create the users table
+-- init.sql
 CREATE TABLE IF NOT EXISTS users (
     user_id SERIAL PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
