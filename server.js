@@ -169,15 +169,22 @@ app.get('/inventory', authenticateToken, async (req, res) => {
 
 // Fulfill/unfulfill
 app.put('/sales/:id/toggle-fulfillment', authenticateToken, async (req, res) => {
-    const { id } = req.params;
+    let { id } = req.params;
+    const { staff_signoff } = req.body;
 
     try {
-        // Log the sale ID being processed
         console.log(`Processing toggle for sale_id: ${id}`);
 
+        // Convert id to integer
+        id = parseInt(id, 10);
+        if (isNaN(id)) {
+            console.error(`Invalid sale_id parameter: ${req.params.id}`);
+            return res.status(400).json({ error: 'Invalid sale_id parameter' });
+        }
+
         // Check if the sale exists
-        const result = await pool.query('SELECT status FROM sales WHERE sale_id = $1', [id]);
-        console.log('Query result:', result.rows); // Log the result
+        const result = await pool.query('SELECT status FROM sales WHERE sale_id = $1::INTEGER', [id]);
+        console.log('Query result:', result.rows);
 
         if (result.rows.length === 0) {
             console.error(`Order with sale_id ${id} not found`);
@@ -191,19 +198,33 @@ app.put('/sales/:id/toggle-fulfillment', authenticateToken, async (req, res) => 
         const newStatus = currentStatus === 'fulfilled' ? 'not fulfilled' : 'fulfilled';
         console.log(`New status: ${newStatus}`);
 
-        // Update the status in the database
+        // If setting to 'fulfilled', require staff_signoff
+        if (newStatus === 'fulfilled') {
+            if (!staff_signoff || staff_signoff.trim() === '') {
+                return res.status(400).json({ error: 'Staff signoff is required when fulfilling an order' });
+            }
+        }
+
+        // Update the sale with the new status and staff_signoff
         const updateResult = await pool.query(
-            'UPDATE sales SET status = $1, fulfillment_time = CASE WHEN $1 = \'fulfilled\' THEN CURRENT_TIMESTAMP ELSE NULL END WHERE sale_id = $2 RETURNING *',
-            [newStatus, id]
+            `UPDATE sales
+             SET status = $1::VARCHAR,
+                 fulfillment_time = CASE WHEN $1 = 'fulfilled' THEN CURRENT_TIMESTAMP ELSE NULL END,
+                 staff_signoff = CASE WHEN $1 = 'fulfilled' THEN $3::VARCHAR ELSE NULL END
+             WHERE sale_id = $2::INTEGER
+             RETURNING *`,
+            [newStatus, id, staff_signoff]
         );
-        console.log('Update result:', updateResult.rows); // Log the updated row
+        console.log('Update result:', updateResult.rows);
 
         res.json({ message: 'Order status updated successfully', order: updateResult.rows[0] });
     } catch (err) {
-        console.error('Error toggling fulfillment status:', err.message, err.stack); // Log detailed error
-        res.status(500).json({ error: 'Server error' });
+        console.error(`Error toggling fulfillment status for sale_id ${id}:`, err.message);
+        console.error(err.stack);
+        res.status(500).json({ error: 'Server error', details: err.message });
     }
 });
+
 
 // Start the server
 app.listen(port, () => console.log(`Server has started on port ${port}`));
