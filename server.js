@@ -216,7 +216,11 @@ app.post('/orders', authenticateToken, async (req, res) => {
 // Get all orders with their items
 app.get('/orders', authenticateToken, async (req, res) => {
     try {
-        const ordersResult = await pool.query('SELECT * FROM orders');
+        const ordersResult = await pool.query(`
+            SELECT o.*, u.first_name, u.last_name, u.email
+            FROM orders o
+            JOIN users u ON o.user_id = u.user_id
+        `);
         const orders = ordersResult.rows;
 
         // Fetch order items for each order
@@ -243,13 +247,24 @@ app.get('/orders', authenticateToken, async (req, res) => {
 // Get total inventory
 app.get('/inventory', authenticateToken, async (req, res) => {
     try {
-        const inventory = await pool.query('SELECT * FROM inventory');
-        res.json(inventory.rows);
+        const inventoryResult = await pool.query(`
+            SELECT clothing_type, itemPhoto, price, 
+                JSON_AGG(JSON_BUILD_OBJECT(
+                    'size', size,
+                    'quantity_available', quantity_available,
+                    'item_id', item_id
+                )) AS sizes
+            FROM inventory
+            GROUP BY clothing_type, itemPhoto, price
+        `);
+
+        res.json(inventoryResult.rows);
     } catch (err) {
         console.error('[INVENTORY] Error fetching inventory:', err.message);
         res.status(500).json({ error: 'Server error' });
     }
 });
+
 
 // Fulfill/unfulfill an order
 app.put('/orders/:id/toggle-fulfillment', authenticateToken, async (req, res) => {
