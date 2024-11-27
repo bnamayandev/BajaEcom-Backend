@@ -42,20 +42,20 @@ const authenticateToken = (req, res, next) => {
 
 // Create a new user
 app.post('/signup', async (req, res) => {
-    const { username, first_name, last_name, phone_number, password } = req.body;
+    const { username, email, first_name, last_name, phone_number, password } = req.body;
 
     try {
         // Validate request body
-        if (!username || !password || !first_name || !last_name || !phone_number) {
+        if (!username || !email || !password || !first_name || !last_name || !phone_number) {
             console.error('[SIGNUP] Missing fields.');
             return res.status(400).json({ error: 'All fields are required.' });
         }
 
-        // Check if the username already exists
-        const userCheck = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
+        // Check if the username or email already exists
+        const userCheck = await pool.query('SELECT * FROM users WHERE username = $1 OR email = $2', [username, email]);
         if (userCheck.rows.length > 0) {
-            console.error(`[SIGNUP] Username already exists: ${username}`);
-            return res.status(400).json({ error: 'Username already exists.' });
+            console.error(`[SIGNUP] Username or email already exists: ${username}, ${email}`);
+            return res.status(400).json({ error: 'Username or email already exists.' });
         }
 
         // Hash the password
@@ -64,9 +64,9 @@ app.post('/signup', async (req, res) => {
 
         // Insert the user into the database
         const newUser = await pool.query(
-            `INSERT INTO users (username, first_name, last_name, phone_number, password) 
-             VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-            [username, first_name, last_name, phone_number, hashedPassword]
+            `INSERT INTO users (username, email, first_name, last_name, phone_number, password) 
+             VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+            [username, email, first_name, last_name, phone_number, hashedPassword]
         );
 
         console.info(`[SIGNUP] New user created: ${newUser.rows[0].username}`);
@@ -79,13 +79,13 @@ app.post('/signup', async (req, res) => {
 
 // Login route
 app.post('/login', async (req, res) => {
-    const { username, password } = req.body;
+    const { email, password } = req.body;
 
     try {
-        // Check if the username exists
-        const result = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
+        // Check if the email exists
+        const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
         if (result.rows.length === 0) {
-            console.error(`[LOGIN] User not found: ${username}`);
+            console.error(`[LOGIN] User not found: ${email}`);
             return res.status(404).json({ error: 'User not found.' });
         }
 
@@ -100,7 +100,7 @@ app.post('/login', async (req, res) => {
 
         // Generate JWT
         const token = jwt.sign({ user_id: user.user_id }, JWT_SECRET, { expiresIn: '2h' });
-        console.info(`[LOGIN] Login successful for user: ${username}`);
+        console.info(`[LOGIN] Login successful for user: ${email}`);
         res.json({ message: 'Login successful', token });
     } catch (err) {
         console.error('[LOGIN] Error during login:', err.message);
