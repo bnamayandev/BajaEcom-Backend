@@ -157,14 +157,17 @@ app.post('/orders', authenticateToken, async (req, res) => {
 
         // Insert items into order_items table
         for (const item of items) {
-            const { item_id, quantity, size } = item;
+            const { item_id, quantity } = item;
 
             // Validate item data
-            if (!item_id || !quantity || !size) {
-                throw new Error('Each item must include item_id, quantity, and size.');
+            if (!item_id || !quantity) {
+                throw new Error('Each item must include item_id and quantity.');
             }
 
-            const itemResult = await pool.query('SELECT price, quantity_available FROM inventory WHERE item_id = $1', [item_id]);
+            const itemResult = await pool.query(
+                'SELECT price, quantity_available, size FROM inventory WHERE item_id = $1',
+                [item_id]
+            );
 
             if (itemResult.rows.length === 0) {
                 throw new Error(`Item with ID ${item_id} not found.`);
@@ -184,7 +187,7 @@ app.post('/orders', authenticateToken, async (req, res) => {
             await pool.query(
                 `INSERT INTO order_items (order_id, item_id, quantity, size, item_price, total_price)
                  VALUES ($1, $2, $3, $4, $5, $6)`,
-                [order.order_id, item_id, quantity, size, itemPrice, totalPrice]
+                [order.order_id, item_id, quantity, itemData.size, itemPrice, totalPrice]
             );
 
             // Update inventory quantity
@@ -248,23 +251,38 @@ app.get('/orders', authenticateToken, async (req, res) => {
 app.get('/inventory', authenticateToken, async (req, res) => {
     try {
         const inventoryResult = await pool.query(`
-            SELECT clothing_type, itemPhoto, price, 
-                JSON_AGG(JSON_BUILD_OBJECT(
-                    'size', size,
-                    'quantity_available', quantity_available,
-                    'item_id', item_id
-                )) AS sizes
-            FROM inventory
-            GROUP BY clothing_type, itemPhoto, price
+            SELECT i.item_id, i.clothing_type, i.size, i.quantity_available, i.price, i.itemPhoto
+            FROM inventory i
+            ORDER BY i.clothing_type, i.size
         `);
 
-        res.json(inventoryResult.rows);
+        const inventoryData = inventoryResult.rows;
+
+        // Group inventory items by clothing_type
+        const groupedInventory = inventoryData.reduce((acc, item) => {
+            const key = item.clothing_type;
+            if (!acc[key]) {
+                acc[key] = {
+                    clothing_type: item.clothing_type,
+                    itemPhoto: item.itemPhoto,
+                    price: item.price,
+                    sizes: [],
+                };
+            }
+            acc[key].sizes.push({
+                size: item.size,
+                quantity_available: item.quantity_available,
+                item_id: item.item_id,
+            });
+            return acc;
+        }, {});
+
+        res.json(Object.values(groupedInventory));
     } catch (err) {
         console.error('[INVENTORY] Error fetching inventory:', err.message);
         res.status(500).json({ error: 'Server error' });
     }
 });
-
 
 // Fulfill/unfulfill an order
 app.put('/orders/:id/toggle-fulfillment', authenticateToken, async (req, res) => {
