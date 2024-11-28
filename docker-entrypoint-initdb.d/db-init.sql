@@ -1,7 +1,7 @@
--- init.sql
 CREATE TABLE IF NOT EXISTS users (
     user_id SERIAL PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
     first_name VARCHAR(50) NOT NULL,
     last_name VARCHAR(50) NOT NULL,
     phone_number VARCHAR(20) NOT NULL,
@@ -41,12 +41,10 @@ CREATE TABLE IF NOT EXISTS order_items (
     total_price NUMERIC(10, 2) NOT NULL
 );
 
--- Insert sample users with hashed passwords
--- Note: Replace the hashed passwords with actual bcrypt hashes of the passwords
-INSERT INTO users (username, first_name, last_name, phone_number, password) VALUES
-('john_doe', 'John', 'Doe', '123-456-7890', '$2b$10$eBQK0mYj1n1VvN.Cs8yWye3ZdUfa1iCqsnYb6C2xZW6ipI5/0e.jW'), -- password: password123
-('jane_smith', 'Jane', 'Smith', '987-654-3210', '$2b$10$4k2.zRfjrAqjKF1b6CQ1XeWOfIIMPGXzj8r1zEBNPafmVlvf5n.5S'), -- password: securepassword
-('alice_johnson', 'Alice', 'Johnson', '555-123-4567', '$2b$10$eZx4p/BR3eBV4PCD0dhFGOx3xVb3WgOZxHzlJyF5ps3bEAmhKFOxG'); -- password: alicepass
+INSERT INTO users (username, email, first_name, last_name, phone_number, password) VALUES
+('john_doe', 'john@example.com', 'John', 'Doe', '123-456-7890', '$2b$10$eBQK0mYj1n1VvN.Cs8yWye3ZdUfa1iCqsnYb6C2xZW6ipI5/0e.jW'),
+('jane_smith', 'jane@example.com', 'Jane', 'Smith', '987-654-3210', '$2b$10$4k2.zRfjrAqjKF1b6CQ1XeWOfIIMPGXzj8r1zEBNPafmVlvf5n.5S'),
+('alice_johnson', 'alice@example.com', 'Alice', 'Johnson', '555-123-4567', '$2b$10$eZx4p/BR3eBV4PCD0dhFGOx3xVb3WgOZxHzlJyF5ps3bEAmhKFOxG');
 
 -- Insert sample inventory items
 INSERT INTO inventory (clothing_type, size, quantity_available, price, itemPhoto) VALUES
