@@ -8,7 +8,7 @@ const morgan = require('morgan');
 const pool = require('./db'); // Ensure this points to your PostgreSQL connection file
 const port = process.env.PORT || 3000; // Fallback to 3000 if PORT is not defined
 const app = express();
-const nodeMailer = require("nodemailer");
+const nodeMailer = require('nodemailer');
 
 // Middleware
 app.use(cors());
@@ -128,7 +128,7 @@ const sendEmail = async (emailData) => {
     const { email, first_name, orderId, pickup_date_time } = emailData;
 
     console.log(`Preparing to send email to: ${email}`);
-    console.log(`Sender's email: ${process.env.EMAIL}`);
+    console.log(`Sender's email: ${process.env.EMAIL_USER}`);
 
     try {
         // Configure the transporter
@@ -137,16 +137,16 @@ const sendEmail = async (emailData) => {
             port: 465,
             secure: true,
             auth: {
-                user: 'westernsaebaja@gmail.com', // Update if needed
-                pass: 'wpka ynib iimg zmxu'       // Update if needed
+                user: process.env.EMAIL_USER, // Sender's email from environment variable
+                pass: process.env.EMAIL_PASSWORD // Email password from environment variable
             }
         });
 
         // Define the email options
         const mailOptions = {
-            from: process.env.EMAIL, // Sender's email
-            to: email,              // Correct recipient field
-            subject: "Thank You For Supporting Western Baja!",
+            from: process.env.EMAIL_USER, // Sender's email
+            to: email,                    // Recipient's email
+            subject: 'Thank You For Supporting Western Baja!',
             text: `Dear ${first_name},\n\nThank you for your recent purchase with us. Your order #${orderId} has been successfully processed and is ready to pick up at CMLP 63 on ${pickup_date_time}.\n\nBest regards,\nWestern Baja SAE`,
             html: `<p>Dear ${first_name},</p><p>Thank you for your recent purchase with us. Your order <strong>#${orderId}</strong> has been successfully processed and is ready to pick up at CMLP 63 on ${pickup_date_time}.</p><p>Best regards,<br>Western Baja SAE</p>`
         };
@@ -160,7 +160,6 @@ const sendEmail = async (emailData) => {
         return { success: false, error: error.message };
     }
 };
-
 
 // Create a new order with multiple items
 app.post('/orders', authenticateToken, async (req, res) => {
@@ -249,11 +248,11 @@ app.post('/orders', authenticateToken, async (req, res) => {
         const { email, first_name } = userResult.rows[0];
         console.log(email, first_name);
 
-        const emailResult = await sendEmail({ 
-            email, 
-            first_name, 
-            orderId: order.order_id, 
-            pickup_date_time 
+        const emailResult = await sendEmail({
+            email,
+            first_name,
+            orderId: order.order_id,
+            pickup_date_time
         });
 
         if (!emailResult.success) {
@@ -264,9 +263,9 @@ app.post('/orders', authenticateToken, async (req, res) => {
         await pool.query('COMMIT'); // Commit transaction
         console.info(`[ORDERS] Order created successfully: ${order.order_id}`);
 
-        return res.status(200).json({ 
-            message: 'Order created successfully', 
-            order_id: order.order_id 
+        return res.status(200).json({
+            message: 'Order created successfully',
+            order_id: order.order_id
         });
     } catch (err) {
         await pool.query('ROLLBACK'); // Rollback only if a transaction was started
@@ -274,7 +273,6 @@ app.post('/orders', authenticateToken, async (req, res) => {
         return res.status(500).json({ error: 'Server error', details: err.message });
     }
 });
-
 
 // Get all orders with their items
 app.get('/orders', authenticateToken, async (req, res) => {
@@ -315,7 +313,7 @@ app.get('/inventory', authenticateToken, async (req, res) => {
             FROM inventory i
             ORDER BY i.clothing_type, i.size
         `);
-        
+
         const inventoryData = inventoryResult.rows;
 
         // Group inventory items by clothing_type
@@ -399,23 +397,21 @@ app.put('/orders/:id/toggle-fulfillment', authenticateToken, async (req, res) =>
 
 // Email sender
 // POST endpoint to trigger email
-
-
-app.post("/send-email", async (req, res) => {
+app.post('/send-email', async (req, res) => {
     const { to, name, orderId, date } = req.body;
 
     // Validate the request body
     if (!to) {
-        return res.status(400).json({ error: "Missing required fields: to" });
+        return res.status(400).json({ error: 'Missing required fields: to' });
     }
 
     // Trigger the email-sending function
-    const result = await sendEmail({ to, name, orderId, date });
+    const result = await sendEmail({ email: to, first_name: name, orderId, pickup_date_time: date });
 
     if (result.success) {
-        res.status(200).json({ message: "Email sent successfully", info: result.info });
+        res.status(200).json({ message: 'Email sent successfully', info: result.info });
     } else {
-        res.status(500).json({ error: "Failed to send email", details: result.error });
+        res.status(500).json({ error: 'Failed to send email', details: result.error });
     }
 });
 
