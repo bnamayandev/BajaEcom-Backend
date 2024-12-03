@@ -278,7 +278,7 @@ app.post('/orders', authenticateToken, async (req, res) => {
 app.get('/orders', authenticateToken, async (req, res) => {
     try {
         const ordersResult = await pool.query(`
-            SELECT o.*, u.first_name, u.last_name, u.email
+            SELECT o.*, u.first_name, u.last_name, u.email, u.phone_number
             FROM orders o
             JOIN users u ON o.user_id = u.user_id
         `);
@@ -395,6 +395,54 @@ app.put('/orders/:id/toggle-fulfillment', authenticateToken, async (req, res) =>
     }
 });
 
+// Void/reinstate an order
+app.put('/orders/:id/void', authenticateToken, async (req, res) => {
+    let { id } = req.params;
+
+    try {
+        id = parseInt(id, 10);
+        if (isNaN(id)) {
+            return res.status(400).json({ error: 'Invalid order_id parameter' });
+        }
+
+        // Check if the order exists
+        const result = await pool.query('SELECT status FROM orders WHERE order_id = $1', [id]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Order not found' });
+        }
+
+        const currentStatus = result.rows[0].status;
+
+        // Determine new status
+        let newStatus = '';
+        let voidTime = null;
+        if (currentStatus === 'voided') {
+            newStatus = 'not fulfilled';
+            voidTime = null;
+        } else {
+            newStatus = 'voided';
+            voidTime = new Date();
+        }
+
+        // Update the order with the new status and void_time
+        const updateResult = await pool.query(
+            `UPDATE orders
+             SET status = $1::VARCHAR(20),
+                 void_time = $2
+             WHERE order_id = $3
+             RETURNING *`,
+            [newStatus, voidTime, id]
+        );
+
+        console.info(`[ORDERS] Order void status updated successfully: ${id}`);
+        res.json({ message: 'Order void status updated successfully', order: updateResult.rows[0] });
+    } catch (err) {
+        console.error(`[ORDERS] Error toggling void status for order_id ${id}:`, err.message);
+        res.status(500).json({ error: 'Server error', details: err.message });
+    }
+});
+
 // Email sender
 // POST endpoint to trigger email
 app.post('/send-email', async (req, res) => {
@@ -414,6 +462,28 @@ app.post('/send-email', async (req, res) => {
         res.status(500).json({ error: 'Failed to send email', details: result.error });
     }
 });
+
+// Function to automatically void orders not fulfilled within 24 hours after pickup date and time
+const autoVoidOrders = async () => {
+    try {
+        const now = new Date();
+        await pool.query(
+            `UPDATE orders
+             SET status = 'voided',
+                 void_time = $1
+             WHERE status = 'not fulfilled'
+             AND pickup_date_time + INTERVAL '24 hours' < $1
+             AND void_time IS NULL`,
+            [now]
+        );
+        console.info('[ORDERS] Auto-voided orders not fulfilled within 24 hours after pickup date and time.');
+    } catch (err) {
+        console.error('[ORDERS] Error auto-voiding orders:', err.message);
+    }
+};
+
+// Schedule the autoVoidOrders function to run every hour
+setInterval(autoVoidOrders, 60 * 60 * 1000); // Every hour
 
 // Start the server
 app.listen(port, () => console.log(`Server has started on port ${port}`));
