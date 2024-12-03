@@ -124,12 +124,49 @@ app.get('/users', authenticateToken, async (req, res) => {
 
 // SALES ROUTES
 
+const sendEmail = async (emailData) => {
+    const { email, first_name, orderId, pickup_date_time } = emailData;
+
+    console.log(`Preparing to send email to: ${email}`);
+    console.log(`Sender's email: ${process.env.EMAIL}`);
+
+    try {
+        // Configure the transporter
+        const transporter = nodeMailer.createTransport({
+            host: 'smtp.gmail.com',
+            port: 465,
+            secure: true,
+            auth: {
+                user: 'westernsaebaja@gmail.com', // Update if needed
+                pass: 'wpka ynib iimg zmxu'       // Update if needed
+            }
+        });
+
+        // Define the email options
+        const mailOptions = {
+            from: process.env.EMAIL, // Sender's email
+            to: email,              // Correct recipient field
+            subject: "Thank You For Supporting Western Baja!",
+            text: `Dear ${first_name},\n\nThank you for your recent purchase with us. Your order #${orderId} has been successfully processed and is ready to pick up at CMLP 63 on ${pickup_date_time}.\n\nBest regards,\nWestern Baja SAE`,
+            html: `<p>Dear ${first_name},</p><p>Thank you for your recent purchase with us. Your order <strong>#${orderId}</strong> has been successfully processed and is ready to pick up at CMLP 63 on ${pickup_date_time}.</p><p>Best regards,<br>Western Baja SAE</p>`
+        };
+
+        // Send the email
+        const info = await transporter.sendMail(mailOptions);
+        console.log(`Email sent: ${info.response}`);
+        return { success: true, info };
+    } catch (error) {
+        console.error(`Error sending email: ${error.message}`);
+        return { success: false, error: error.message };
+    }
+};
+
+
 // Create a new order with multiple items
 app.post('/orders', authenticateToken, async (req, res) => {
     try {
-        const user_id = req.user.user_id; // Get user_id from the authenticated user
+        const user_id = req.user.user_id;
         const { pickup_date_time, items } = req.body;
-        // items is an array of objects [{ item_id, quantity, size }]
 
         // Validate pickup_date_time
         if (!pickup_date_time || isNaN(new Date(pickup_date_time))) {
@@ -143,8 +180,7 @@ app.post('/orders', authenticateToken, async (req, res) => {
             return res.status(400).json({ error: 'Items array is required and cannot be empty.' });
         }
 
-        // Begin transaction
-        await pool.query('BEGIN');
+        await pool.query('BEGIN'); // Begin transaction
 
         // Insert into orders table
         const orderResult = await pool.query(
@@ -160,7 +196,6 @@ app.post('/orders', authenticateToken, async (req, res) => {
         for (const item of items) {
             const { item_id, quantity } = item;
 
-            // Validate item data
             if (!item_id || !quantity) {
                 throw new Error('Each item must include item_id and quantity.');
             }
@@ -175,8 +210,6 @@ app.post('/orders', authenticateToken, async (req, res) => {
             }
 
             const itemData = itemResult.rows[0];
-
-            // Check if sufficient quantity is available
             if (itemData.quantity_available < quantity) {
                 throw new Error(`Insufficient quantity for item ID ${item_id}.`);
             }
@@ -191,10 +224,8 @@ app.post('/orders', authenticateToken, async (req, res) => {
                 [order.order_id, item_id, quantity, itemData.size, itemPrice, totalPrice]
             );
 
-            // Update inventory quantity
             await pool.query(
-                `UPDATE inventory SET quantity_available = quantity_available - $1
-                 WHERE item_id = $2`,
+                `UPDATE inventory SET quantity_available = quantity_available - $1 WHERE item_id = $2`,
                 [quantity, item_id]
             );
         }
@@ -205,17 +236,45 @@ app.post('/orders', authenticateToken, async (req, res) => {
             [orderTotal, order.order_id]
         );
 
-        // Commit transaction
-        await pool.query('COMMIT');
+        const userResult = await pool.query(
+            'SELECT email, first_name FROM users WHERE user_id = $1',
+            [user_id]
+        );
 
+        if (userResult.rows.length === 0) {
+            console.error('[ORDERS] User not found.');
+            throw new Error('User not found.');
+        }
+
+        const { email, first_name } = userResult.rows[0];
+        console.log(email, first_name);
+
+        const emailResult = await sendEmail({ 
+            email, 
+            first_name, 
+            orderId: order.order_id, 
+            pickup_date_time 
+        });
+
+        if (!emailResult.success) {
+            console.error(`Error sending email: ${emailResult.error}`);
+            throw new Error('Failed to send email.');
+        }
+
+        await pool.query('COMMIT'); // Commit transaction
         console.info(`[ORDERS] Order created successfully: ${order.order_id}`);
-        res.json({ message: 'Order created successfully', order_id: order.order_id });
+
+        return res.status(200).json({ 
+            message: 'Order created successfully', 
+            order_id: order.order_id 
+        });
     } catch (err) {
-        await pool.query('ROLLBACK');
+        await pool.query('ROLLBACK'); // Rollback only if a transaction was started
         console.error('[ORDERS] Error creating order:', err.message);
-        res.status(500).json({ error: 'Server error', details: err.message });
+        return res.status(500).json({ error: 'Server error', details: err.message });
     }
 });
+
 
 // Get all orders with their items
 app.get('/orders', authenticateToken, async (req, res) => {
@@ -339,39 +398,7 @@ app.put('/orders/:id/toggle-fulfillment', authenticateToken, async (req, res) =>
 
 // Email sender
 // POST endpoint to trigger email
-const sendEmail = async (emailData) => {
-    const { to, name, orderId, date } = emailData;
-  
-    try {
-      // Configure the transporter
-      const transporter = nodeMailer.createTransport({
-        host: 'smtp.gmail.com',
-        port: 465,
-        secure: true,
-        auth: {
-            user: 'westernsaebaja@gmail.com',
-            pass: 'wpka ynib iimg zmxu'
-        }
-    });
-  
-      // Define the email options
-      const mailOptions = {
-        from: process.env.EMAIL, // Sender's email
-        to, // Recipient's email
-        subject: "Thank You For Supporting Western Baja!", // Email subject
-        text: `Dear ${name},\n\nThank you for your recent purchase with us. Your order #${orderId} has been successfully processed and is ready to pick up at CMLP 63 on ${date}.\n\nWe truly appreciate your business and hope to serve you again in the future. If you have any questions or need further assistance, feel free to reach out to us.\n\nBest regards,\nWestern Baja SAE`, // Plain text body
-        html: `<p>Dear ${name},</p><p>Thank you for your recent purchase with us. Your order <strong>#${orderId}</strong> has been successfully processed and is ready to pick up at CMLP 63 on ${date}.</p><p>We truly appreciate your business and hope to serve you again in the future. If you have any questions or need further assistance, feel free to reach out to us.</p><p>Best regards,<br>Western Baja SAE</p>` // HTML body (optional)
-      };
-  
-      // Send the email
-      const info = await transporter.sendMail(mailOptions);
-      console.log(`Email sent: ${info.response}`);
-      return { success: true, info };
-    } catch (error) {
-      console.error(`Error sending email: ${error.message}`);
-      return { success: false, error: error.message };
-    }
-};
+
 
 app.post("/send-email", async (req, res) => {
     const { to, name, orderId, date } = req.body;
