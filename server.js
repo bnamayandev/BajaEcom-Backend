@@ -8,7 +8,7 @@ const morgan = require('morgan');
 const pool = require('./db'); // Ensure this points to your PostgreSQL connection file
 const port = process.env.PORT || 3000; // Fallback to 3000 if PORT is not defined
 const app = express();
-const nodeMailer = require("nodemailer");
+const nodeMailer = require('nodemailer');
 
 // Middleware
 app.use(cors());
@@ -128,7 +128,7 @@ const sendEmail = async (emailData) => {
     const { email, first_name, orderId, pickup_date_time } = emailData;
 
     console.log(`Preparing to send email to: ${email}`);
-    console.log(`Sender's email: ${process.env.EMAIL}`);
+    console.log(`Sender's email: ${process.env.EMAIL_USER}`);
 
     try {
         // Configure the transporter
@@ -137,16 +137,16 @@ const sendEmail = async (emailData) => {
             port: 465,
             secure: true,
             auth: {
-                user: 'westernsaebaja@gmail.com', // Update if needed
-                pass: 'wpka ynib iimg zmxu'       // Update if needed
+                user: process.env.EMAIL_USER, // Sender's email from environment variable
+                pass: process.env.EMAIL_PASSWORD // Email password from environment variable
             }
         });
 
         // Define the email options
         const mailOptions = {
-            from: process.env.EMAIL, // Sender's email
-            to: email,              // Correct recipient field
-            subject: "Thank You For Supporting Western Baja!",
+            from: process.env.EMAIL_USER, // Sender's email
+            to: email,                    // Recipient's email
+            subject: 'Thank You For Supporting Western Baja!',
             text: `Dear ${first_name},\n\nThank you for your recent purchase with us. Your order #${orderId} has been successfully processed and is ready to pick up at CMLP 63 on ${pickup_date_time}.\n\nBest regards,\nWestern Baja SAE`,
             html: `<p>Dear ${first_name},</p><p>Thank you for your recent purchase with us. Your order <strong>#${orderId}</strong> has been successfully processed and is ready to pick up at CMLP 63 on ${pickup_date_time}.</p><p>Best regards,<br>Western Baja SAE</p>`
         };
@@ -160,7 +160,6 @@ const sendEmail = async (emailData) => {
         return { success: false, error: error.message };
     }
 };
-
 
 // Create a new order with multiple items
 app.post('/orders', authenticateToken, async (req, res) => {
@@ -249,11 +248,11 @@ app.post('/orders', authenticateToken, async (req, res) => {
         const { email, first_name } = userResult.rows[0];
         console.log(email, first_name);
 
-        const emailResult = await sendEmail({ 
-            email, 
-            first_name, 
-            orderId: order.order_id, 
-            pickup_date_time 
+        const emailResult = await sendEmail({
+            email,
+            first_name,
+            orderId: order.order_id,
+            pickup_date_time
         });
 
         if (!emailResult.success) {
@@ -264,9 +263,9 @@ app.post('/orders', authenticateToken, async (req, res) => {
         await pool.query('COMMIT'); // Commit transaction
         console.info(`[ORDERS] Order created successfully: ${order.order_id}`);
 
-        return res.status(200).json({ 
-            message: 'Order created successfully', 
-            order_id: order.order_id 
+        return res.status(200).json({
+            message: 'Order created successfully',
+            order_id: order.order_id
         });
     } catch (err) {
         await pool.query('ROLLBACK'); // Rollback only if a transaction was started
@@ -275,12 +274,11 @@ app.post('/orders', authenticateToken, async (req, res) => {
     }
 });
 
-
 // Get all orders with their items
 app.get('/orders', authenticateToken, async (req, res) => {
     try {
         const ordersResult = await pool.query(`
-            SELECT o.*, u.first_name, u.last_name, u.email
+            SELECT o.*, u.first_name, u.last_name, u.email, u.phone_number
             FROM orders o
             JOIN users u ON o.user_id = u.user_id
         `);
@@ -315,7 +313,7 @@ app.get('/inventory', authenticateToken, async (req, res) => {
             FROM inventory i
             ORDER BY i.clothing_type, i.size
         `);
-        
+
         const inventoryData = inventoryResult.rows;
 
         // Group inventory items by clothing_type
@@ -397,27 +395,95 @@ app.put('/orders/:id/toggle-fulfillment', authenticateToken, async (req, res) =>
     }
 });
 
+// Void/reinstate an order
+app.put('/orders/:id/void', authenticateToken, async (req, res) => {
+    let { id } = req.params;
+
+    try {
+        id = parseInt(id, 10);
+        if (isNaN(id)) {
+            return res.status(400).json({ error: 'Invalid order_id parameter' });
+        }
+
+        // Check if the order exists
+        const result = await pool.query('SELECT status FROM orders WHERE order_id = $1', [id]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Order not found' });
+        }
+
+        const currentStatus = result.rows[0].status;
+
+        // Determine new status
+        let newStatus = '';
+        let voidTime = null;
+        if (currentStatus === 'voided') {
+            newStatus = 'not fulfilled';
+            voidTime = null;
+        } else {
+            newStatus = 'voided';
+            voidTime = new Date();
+        }
+
+        // Update the order with the new status and void_time
+        const updateResult = await pool.query(
+            `UPDATE orders
+             SET status = $1::VARCHAR(20),
+                 void_time = $2
+             WHERE order_id = $3
+             RETURNING *`,
+            [newStatus, voidTime, id]
+        );
+
+        console.info(`[ORDERS] Order void status updated successfully: ${id}`);
+        res.json({ message: 'Order void status updated successfully', order: updateResult.rows[0] });
+    } catch (err) {
+        console.error(`[ORDERS] Error toggling void status for order_id ${id}:`, err.message);
+        res.status(500).json({ error: 'Server error', details: err.message });
+    }
+});
+
 // Email sender
 // POST endpoint to trigger email
-
-
-app.post("/send-email", async (req, res) => {
+app.post('/send-email', async (req, res) => {
     const { to, name, orderId, date } = req.body;
 
     // Validate the request body
     if (!to) {
-        return res.status(400).json({ error: "Missing required fields: to" });
+        return res.status(400).json({ error: 'Missing required fields: to' });
     }
 
     // Trigger the email-sending function
-    const result = await sendEmail({ to, name, orderId, date });
+    const result = await sendEmail({ email: to, first_name: name, orderId, pickup_date_time: date });
 
     if (result.success) {
-        res.status(200).json({ message: "Email sent successfully", info: result.info });
+        res.status(200).json({ message: 'Email sent successfully', info: result.info });
     } else {
-        res.status(500).json({ error: "Failed to send email", details: result.error });
+        res.status(500).json({ error: 'Failed to send email', details: result.error });
     }
 });
+
+// Function to automatically void orders not fulfilled within 24 hours after pickup date and time
+const autoVoidOrders = async () => {
+    try {
+        const now = new Date();
+        await pool.query(
+            `UPDATE orders
+             SET status = 'voided',
+                 void_time = $1
+             WHERE status = 'not fulfilled'
+             AND pickup_date_time + INTERVAL '24 hours' < $1
+             AND void_time IS NULL`,
+            [now]
+        );
+        console.info('[ORDERS] Auto-voided orders not fulfilled within 24 hours after pickup date and time.');
+    } catch (err) {
+        console.error('[ORDERS] Error auto-voiding orders:', err.message);
+    }
+};
+
+// Schedule the autoVoidOrders function to run every hour
+setInterval(autoVoidOrders, 60 * 60 * 1000); // Every hour
 
 // Start the server
 app.listen(port, () => console.log(`Server has started on port ${port}`));

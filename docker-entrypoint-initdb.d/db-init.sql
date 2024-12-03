@@ -28,7 +28,8 @@ CREATE TABLE IF NOT EXISTS orders (
     status VARCHAR(20) NOT NULL DEFAULT 'not fulfilled',
     fulfillment_time TIMESTAMP NULL,
     staff_signoff VARCHAR(100) NULL,
-    order_total NUMERIC(10, 2) NOT NULL DEFAULT 0
+    order_total NUMERIC(10, 2) NOT NULL DEFAULT 0,
+    void_time TIMESTAMP NULL
 );
 
 -- Create the order_items table
@@ -42,6 +43,7 @@ CREATE TABLE IF NOT EXISTS order_items (
     total_price NUMERIC(10, 2) NOT NULL
 );
 
+-- Insert sample users
 INSERT INTO users (username, email, first_name, last_name, phone_number, password) VALUES
 ('john_doe', 'john@example.com', 'John', 'Doe', '123-456-7890', '$2b$10$eBQK0mYj1n1VvN.Cs8yWye3ZdUfa1iCqsnYb6C2xZW6ipI5/0e.jW'),
 ('jane_smith', 'jane@example.com', 'Jane', 'Smith', '987-654-3210', '$2b$10$4k2.zRfjrAqjKF1b6CQ1XeWOfIIMPGXzj8r1zEBNPafmVlvf5n.5S'),
