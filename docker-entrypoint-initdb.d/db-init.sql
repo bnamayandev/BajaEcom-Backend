@@ -54,7 +54,9 @@ INSERT INTO inventory (clothing_type, size, quantity_available, price, item_phot
 ('Graphic T-Shirt', 'M', 50, 19.99, 'tshirt.jpg', 'This is a t-shirt'),
 ('Graphic T-Shirt', 'L', 25, 19.99, 'tshirt.jpg', 'This is a t-shirt'),
 ('Baseball Cap', 'L', 15, 9.99, 'cap.jpg', 'This is a cap'),
-('Hoodie', 'XL', 10, 29.99, 'hoodie.jpg', 'This is a hoodie');
+('Hoodie', 'XL', 10, 29.99, 'hoodie.jpg', 'This is a hoodie'),
+('Hoodie', 'S', 10, 29.99, 'hoodie.jpg', 'This is a hoodie'),
+('Yeti Water Bottle', 'O/S', 10, 29.99, 'bottle.jpg', 'This is an auraful bottle.');
 
 -- Insert sample orders
 INSERT INTO orders (user_id, pickup_date_time, status, order_total) VALUES
