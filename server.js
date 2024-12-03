@@ -8,6 +8,7 @@ const morgan = require('morgan');
 const pool = require('./db'); // Ensure this points to your PostgreSQL connection file
 const port = process.env.PORT || 3000; // Fallback to 3000 if PORT is not defined
 const app = express();
+const nodeMailer = require("nodemailer");
 
 // Middleware
 app.use(cors());
@@ -333,6 +334,60 @@ app.put('/orders/:id/toggle-fulfillment', authenticateToken, async (req, res) =>
     } catch (err) {
         console.error(`[ORDERS] Error toggling fulfillment status for order_id ${id}:`, err.message);
         res.status(500).json({ error: 'Server error', details: err.message });
+    }
+});
+
+// Email sender
+// POST endpoint to trigger email
+const sendEmail = async (emailData) => {
+    const { to, name, orderId, date } = emailData;
+  
+    try {
+      // Configure the transporter
+      const transporter = nodeMailer.createTransport({
+        host: 'smtp.gmail.com',
+        port: 465,
+        secure: true,
+        auth: {
+            user: 'westernsaebaja@gmail.com',
+            pass: 'wpka ynib iimg zmxu'
+        }
+    });
+  
+      // Define the email options
+      const mailOptions = {
+        from: process.env.EMAIL, // Sender's email
+        to, // Recipient's email
+        subject: "Thank You For Supporting Western Baja!", // Email subject
+        text: `Dear ${name},\n\nThank you for your recent purchase with us. Your order #${orderId} has been successfully processed and is ready to pick up at CMLP 63 on ${date}.\n\nWe truly appreciate your business and hope to serve you again in the future. If you have any questions or need further assistance, feel free to reach out to us.\n\nBest regards,\nWestern Baja SAE`, // Plain text body
+        html: `<p>Dear ${name},</p><p>Thank you for your recent purchase with us. Your order <strong>#${orderId}</strong> has been successfully processed and is ready to pick up at CMLP 63 on ${date}.</p><p>We truly appreciate your business and hope to serve you again in the future. If you have any questions or need further assistance, feel free to reach out to us.</p><p>Best regards,<br>Western Baja SAE</p>` // HTML body (optional)
+      };
+  
+      // Send the email
+      const info = await transporter.sendMail(mailOptions);
+      console.log(`Email sent: ${info.response}`);
+      return { success: true, info };
+    } catch (error) {
+      console.error(`Error sending email: ${error.message}`);
+      return { success: false, error: error.message };
+    }
+};
+
+app.post("/send-email", async (req, res) => {
+    const { to, name, orderId, date } = req.body;
+
+    // Validate the request body
+    if (!to) {
+        return res.status(400).json({ error: "Missing required fields: to" });
+    }
+
+    // Trigger the email-sending function
+    const result = await sendEmail({ to, name, orderId, date });
+
+    if (result.success) {
+        res.status(200).json({ message: "Email sent successfully", info: result.info });
+    } else {
+        res.status(500).json({ error: "Failed to send email", details: result.error });
     }
 });
 
