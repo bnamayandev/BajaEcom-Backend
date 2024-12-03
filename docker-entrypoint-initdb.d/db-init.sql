@@ -15,7 +15,8 @@ CREATE TABLE IF NOT EXISTS inventory (
     size VARCHAR(10) NOT NULL,
     quantity_available INT NOT NULL,
     price NUMERIC(10, 2) NOT NULL DEFAULT 0,
-    itemPhoto VARCHAR(255) NOT NULL
+    item_photo VARCHAR(255) NOT NULL,
+    description VARCHAR(255) NOT NULL
 );
 
 -- Create the orders table
@@ -47,11 +48,11 @@ INSERT INTO users (username, email, first_name, last_name, phone_number, passwor
 ('alice_johnson', 'alice@example.com', 'Alice', 'Johnson', '555-123-4567', '$2b$10$eZx4p/BR3eBV4PCD0dhFGOx3xVb3WgOZxHzlJyF5ps3bEAmhKFOxG');
 
 -- Insert sample inventory items
-INSERT INTO inventory (clothing_type, size, quantity_available, price, itemPhoto) VALUES
-('Graphic T-Shirt', 'M', 50, 19.99, 'tshirt.jpg'),
-('Graphic T-Shirt', 'L', 25, 19.99, 'tshirt.jpg'),
-('Baseball Cap', 'L', 15, 9.99, 'cap.jpg'),
-('Hoodie', 'XL', 10, 29.99, 'hoodie.jpg');
+INSERT INTO inventory (clothing_type, size, quantity_available, price, item_photo, description) VALUES
+('Graphic T-Shirt', 'M', 50, 19.99, 'tshirt.jpg', 'This is a t-shirt'),
+('Graphic T-Shirt', 'L', 25, 19.99, 'tshirt.jpg', 'This is a t-shirt'),
+('Baseball Cap', 'L', 15, 9.99, 'cap.jpg', 'This is a cap'),
+('Hoodie', 'XL', 10, 29.99, 'hoodie.jpg', 'This is a hoodie');
 
 -- Insert sample orders
 INSERT INTO orders (user_id, pickup_date_time, status, order_total) VALUES

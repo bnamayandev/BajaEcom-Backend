@@ -229,7 +229,7 @@ app.get('/orders', authenticateToken, async (req, res) => {
         // Fetch order items for each order
         for (const order of orders) {
             const itemsResult = await pool.query(
-                `SELECT oi.*, i.clothing_type, i.itemPhoto
+                `SELECT oi.*, i.clothing_type, i.item_photo
                  FROM order_items oi
                  JOIN inventory i ON oi.item_id = i.item_id
                  WHERE oi.order_id = $1`,
@@ -251,11 +251,11 @@ app.get('/orders', authenticateToken, async (req, res) => {
 app.get('/inventory', authenticateToken, async (req, res) => {
     try {
         const inventoryResult = await pool.query(`
-            SELECT i.item_id, i.clothing_type, i.size, i.quantity_available, i.price, i.itemPhoto
+            SELECT i.item_id, i.clothing_type, i.size, i.quantity_available, i.price, i.item_photo, i.description
             FROM inventory i
             ORDER BY i.clothing_type, i.size
         `);
-
+        
         const inventoryData = inventoryResult.rows;
 
         // Group inventory items by clothing_type
@@ -264,7 +264,8 @@ app.get('/inventory', authenticateToken, async (req, res) => {
             if (!acc[key]) {
                 acc[key] = {
                     clothing_type: item.clothing_type,
-                    itemPhoto: item.itemPhoto,
+                    item_photo: item.item_photo,
+                    description: item.description,
                     price: item.price,
                     sizes: [],
                 };
