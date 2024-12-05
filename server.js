@@ -1,3 +1,5 @@
+// server.js
+
 require('dotenv').config();
 const express = require('express');
 const jwt = require('jsonwebtoken');
@@ -327,6 +329,30 @@ app.get('/orders', authenticateToken, async (req, res) => {
     }
 });
 
+// Get the current authenticated user's orders
+app.get('/user/orders', authenticateToken, async (req, res) => {
+    try {
+        const user_id = req.user.user_id;
+
+        // Fetch orders belonging to the authenticated user
+        const ordersResult = await pool.query(
+            `SELECT o.*, 
+                    (SELECT json_agg(oi) 
+                     FROM order_items oi 
+                     JOIN inventory i ON oi.item_id = i.item_id 
+                     WHERE oi.order_id = o.order_id) AS items
+             FROM orders o
+             WHERE o.user_id = $1`,
+            [user_id]
+        );
+
+        res.json(ordersResult.rows);
+    } catch (err) {
+        console.error('[USER ORDERS] Error fetching user orders:', err.message);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 // INVENTORY ROUTES
 
 // Get total inventory
@@ -487,6 +513,86 @@ app.post('/send-email', async (req, res) => {
     }
 });
 
+// NEW: Cancel an order
+app.put('/orders/:id/cancel', authenticateToken, async (req, res) => {
+    const { id } = req.params;
+    const user_id = req.user.user_id;
+
+    try {
+        const orderId = parseInt(id, 10);
+        if (isNaN(orderId)) {
+            return res.status(400).json({ error: 'Invalid order ID.' });
+        }
+
+        // Start a transaction
+        await pool.query('BEGIN');
+
+        // Fetch the order
+        const orderResult = await pool.query('SELECT * FROM orders WHERE order_id = $1', [orderId]);
+
+        if (orderResult.rows.length === 0) {
+            await pool.query('ROLLBACK');
+            return res.status(404).json({ error: 'Order not found.' });
+        }
+
+        const order = orderResult.rows[0];
+
+        // Check if the order belongs to the user
+        if (order.user_id !== user_id) {
+            await pool.query('ROLLBACK');
+            return res.status(403).json({ error: 'You are not authorized to cancel this order.' });
+        }
+
+        // Check if the order is already fulfilled or voided
+        if (order.status === 'fulfilled') {
+            await pool.query('ROLLBACK');
+            return res.status(400).json({ error: 'Cannot cancel a fulfilled order.' });
+        }
+
+        if (order.status === 'voided') {
+            await pool.query('ROLLBACK');
+            return res.status(400).json({ error: 'Order is already voided.' });
+        }
+
+        // Update the order status to 'voided' and set void_time
+        const updateOrderResult = await pool.query(
+            `UPDATE orders
+             SET status = 'voided',
+                 void_time = CURRENT_TIMESTAMP
+             WHERE order_id = $1
+             RETURNING *`,
+            [orderId]
+        );
+
+        // Fetch all items in the order
+        const itemsResult = await pool.query(
+            `SELECT * FROM order_items WHERE order_id = $1`,
+            [orderId]
+        );
+
+        const items = itemsResult.rows;
+
+        // Restock the inventory
+        for (const item of items) {
+            await pool.query(
+                `UPDATE inventory
+                 SET quantity_available = quantity_available + $1
+                 WHERE item_id = $2`,
+                [item.quantity, item.item_id]
+            );
+        }
+
+        await pool.query('COMMIT');
+
+        console.info(`[ORDERS] Order canceled successfully: ${orderId}`);
+        res.json({ message: 'Order canceled successfully.', order: updateOrderResult.rows[0] });
+    } catch (err) {
+        await pool.query('ROLLBACK');
+        console.error(`[ORDERS] Error canceling order ${id}:`, err.message);
+        res.status(500).json({ error: 'Server error', details: err.message });
+    }
+});
+
 // Function to automatically void orders not fulfilled within 24 hours after pickup date and time
 const autoVoidOrders = async () => {
     try {
@@ -508,6 +614,17 @@ const autoVoidOrders = async () => {
 
 // Schedule the autoVoidOrders function to run every hour
 setInterval(autoVoidOrders, 60 * 60 * 1000); // Every hour
+
+// Catch-all 404 handler
+app.use((req, res, next) => {
+    res.status(404).json({ error: 'Endpoint not found.' });
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error('Unhandled error:', err);
+    res.status(500).json({ error: 'An unexpected error occurred.' });
+});
 
 // Start the server
 app.listen(port, () => console.log(`Server has started on port ${port}`));
