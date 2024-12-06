@@ -42,3 +42,17 @@ CREATE TABLE IF NOT EXISTS order_items (
     item_price NUMERIC(10, 2) NOT NULL,
     total_price NUMERIC(10, 2) NOT NULL
 );
+
+INSERT INTO inventory (clothing_type, size, quantity_available, price, item_photo, description) VALUES
+('Shop Shirt', 'S', 4, 24.99, 'shirt.png', ''),
+('Shop Shirt', 'M', 14, 24.99, 'shirt.png', ''),
+('Shop Shirt', 'L', 10, 24.99, 'shirt.png', ''),
+('Shop Shirt', 'XL', 4, 24.99, 'shirt.png', ''),
+('Polo', 'S', 4, 29.99, 'polo.png', ''),
+('Polo', 'M', 10, 29.99, 'polo.png', ''),
+('Polo', 'L', 10, 29.99, 'polo.png', ''),
+('Polo', 'XL', 5, 29.99, 'polo.png', ''),
+('Pom-Pom Hat', 'O/S', 19, 29.99, 'pompom.png', ''),
+('FlexFit Trucker Hat', 'O/S', 9, 29.99, 'flexfithat.png', ''),
+('Snap-Back Trucker Hat', 'O/S', 10, 29.99, 'snapback.png', ''),
+('Classic Beanie', 'O/S', 20, 29.99, 'snapback.png', '');
