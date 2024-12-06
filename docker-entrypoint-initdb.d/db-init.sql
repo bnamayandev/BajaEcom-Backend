@@ -42,38 +42,3 @@ CREATE TABLE IF NOT EXISTS order_items (
     item_price NUMERIC(10, 2) NOT NULL,
     total_price NUMERIC(10, 2) NOT NULL
 );
-
--- Insert sample users
-INSERT INTO users (username, email, first_name, last_name, phone_number, password) VALUES
-('john_doe', 'john@example.com', 'John', 'Doe', '123-456-7890', '$2b$10$eBQK0mYj1n1VvN.Cs8yWye3ZdUfa1iCqsnYb6C2xZW6ipI5/0e.jW'),
-('jane_smith', 'jane@example.com', 'Jane', 'Smith', '987-654-3210', '$2b$10$4k2.zRfjrAqjKF1b6CQ1XeWOfIIMPGXzj8r1zEBNPafmVlvf5n.5S'),
-('alice_johnson', 'alice@example.com', 'Alice', 'Johnson', '555-123-4567', '$2b$10$eZx4p/BR3eBV4PCD0dhFGOx3xVb3WgOZxHzlJyF5ps3bEAmhKFOxG');
-
--- Insert sample inventory items
-INSERT INTO inventory (clothing_type, size, quantity_available, price, item_photo, description) VALUES
-('Shop Shirt', 'S', 4, 24.99, 'shirt.png', ''),
-('Shop Shirt', 'M', 14, 24.99, 'shirt.png', ''),
-('Shop Shirt', 'L', 10, 24.99, 'shirt.png', ''),
-('Shop Shirt', 'XL', 4, 24.99, 'shirt.png', ''),
-('Polo', 'S', 4, 29.99, 'polo.png', ''),
-('Polo', 'M', 10, 29.99, 'polo.png', ''),
-('Polo', 'L', 10, 29.99, 'polo.png', ''),
-('Polo', 'XL', 5, 29.99, 'polo.png', ''),
-('Pom-Pom Hat', 'O/S', 19, 29.99, 'pompom.png', ''),
-('FlexFit Trucker Hat', 'O/S', 9, 29.99, 'flexfithat.png', ''),
-('Snap-Back Trucker Hat', 'O/S', 10, 29.99, 'snapback.png', ''),
-('Classic Beanie', 'O/S', 20, 29.99, 'snapback.png', '');
-
--- Insert sample orders
-INSERT INTO orders (user_id, pickup_date_time, status, order_total) VALUES
-(1, '2024-12-15 10:00:00', 'not fulfilled', 69.97),
-(2, '2024-12-20 14:00:00', 'not fulfilled', 29.97),
-(3, '2024-12-25 09:00:00', 'fulfilled', 59.97);
-
--- Insert sample order items
-INSERT INTO order_items (order_id, item_id, quantity, size, item_price, total_price) VALUES
-(1, 1, 2, 'M', 19.99, 39.98),
-(1, 3, 1, 'L', 9.99, 9.99),
-(1, 2, 1, 'L', 19.99, 19.99),
-(2, 3, 3, 'L', 9.99, 29.97),
-(3, 2, 3, 'L', 19.99, 59.97);
