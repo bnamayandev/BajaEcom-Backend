@@ -1,5 +1,3 @@
-// server.js
-
 require('dotenv').config();
 const express = require('express');
 const jwt = require('jsonwebtoken');
@@ -8,13 +6,20 @@ const cors = require('cors');
 const bcrypt = require('bcrypt');
 const morgan = require('morgan');
 const pool = require('./db'); // Ensure this points to your PostgreSQL connection file
-const port = process.env.PORT || 3000; // Fallback to 3000 if PORT is not defined
-const app = express();
 const nodeMailer = require('nodemailer');
 const { format } = require('date-fns');
 
-// Middleware
-app.use(cors());
+const app = express();
+const port = process.env.PORT || 3000;
+
+// CORS Configuration
+const corsOptions = {
+    origin: 'https://silver-gaufre-6f5db9.netlify.app', // Replace with your actual frontend URL
+    optionsSuccessStatus: 200,
+};
+app.use(cors(corsOptions));
+
+//Middleware
 app.use(helmet());
 app.use(express.json());
 app.use(morgan('combined'));

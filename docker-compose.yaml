@@ -1,28 +1,12 @@
+version: '3.8'
 services:
-  db:
-    image: postgres
-    environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
-    ports:
-      - "5432:5432"
-    volumes:
-      - ./db-data:/var/lib/postgresql/data
-      - ./docker-entrypoint-initdb.d/db-init.sql:/docker-entrypoint-initdb.d/db-init.sql
-
   app:
     build: .
     ports:
-      - "13000:3000"
-    depends_on:
-      - db
+      - "3000:3000"
     environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
       - JWT_SECRET=${JWT_SECRET}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_HOST=db
-      - DB_PORT=5432
-      - DB_NAME=${DB_NAME}
       - EMAIL_USER=${EMAIL_USER}
       - EMAIL_PASSWORD=${EMAIL_PASSWORD}
