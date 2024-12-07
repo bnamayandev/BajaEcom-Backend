@@ -149,26 +149,25 @@ app.get('/users', authenticateToken, async (req, res) => {
 const sendEmail = async (emailData) => {
     const { email, first_name, orderId, pickup_date_time } = emailData;
 
-    console.log(`Preparing to send email to: ${email}`);
-    console.log(`Sender's email: ${process.env.EMAIL_USER}`);
-
     try {
-        // Format the pickup date and time
         const pickupDate = new Date(pickup_date_time);
+
+        // Adjust the time by subtracting 5 hours (for UTC to Eastern Time adjustment)
+        pickupDate.setHours(pickupDate.getHours() - 5);
+
+        // Format the adjusted date and time
         const formattedPickupDate = format(pickupDate, "MMMM d, yyyy 'at' h:mm a");
 
-        // Configure the transporter
         const transporter = nodeMailer.createTransport({
-            service: 'gmail', // You can use 'gmail' as a shorthand for SMTP settings
+            service: 'gmail',
             auth: {
                 user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASSWORD // Ensure this matches your environment variables
-            }
+                pass: process.env.EMAIL_PASSWORD,
+            },
         });
 
-        // Define the email options with improved formatting
         const mailOptions = {
-            from: `"Western Baja SAE" <${process.env.EMAIL_USER}>`, // Add a friendly name
+            from: `"Western Baja SAE" <${process.env.EMAIL_USER}>`,
             to: email,
             subject: 'Thank You For Your Purchase!',
             text: `Dear ${first_name},
@@ -193,10 +192,9 @@ Western Baja SAE`,
                         You are receiving this email because you placed an order with Western Baja SAE. If you believe this was a mistake, please contact our support team.
                     </p>
                 </div>
-            `
+            `,
         };
 
-        // Send the email
         const info = await transporter.sendMail(mailOptions);
         console.log(`Email sent: ${info.response}`);
         return { success: true, info };
