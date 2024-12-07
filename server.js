@@ -14,12 +14,24 @@ const port = process.env.PORT || 3000;
 const host = process.env.HOST || '127.0.0.1';
 
 // CORS Configuration
+const allowedOrigins = [
+    'https://shopwesternbaja.com',
+    'https://silver-gaufre-6f5db9.netlify.app', // Add other allowed origins here
+];
+
 const corsOptions = {
-    origin: 'https://shopwesternbaja.com', // Replace with your actual frontend URL
-    optionsSuccessStatus: 200,
+    origin: (origin, callback) => {
+        if (allowedOrigins.includes(origin)) {
+            callback(null, origin); // Allow the origin
+        } else {
+            callback(new Error('Not allowed by CORS')); // Deny other origins
+        }
+    },
+    optionsSuccessStatus: 200, // For legacy browser support
 };
 
 app.use(cors(corsOptions));
+
 
 //Middleware
 app.use(helmet());
