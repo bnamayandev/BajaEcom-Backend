@@ -15,7 +15,7 @@ const host = process.env.HOST || '127.0.0.1';
 
 // CORS Configuration
 const corsOptions = {
-    origin: 'https://silver-gaufre-6f5db9.netlify.app', // Replace with your actual frontend URL
+    origin: 'https://silver-gaufre-6f5db9.netlify.app',
     optionsSuccessStatus: 200,
 };
 
