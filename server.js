@@ -11,12 +11,14 @@ const { format } = require('date-fns');
 
 const app = express();
 const port = process.env.PORT || 3000;
+const host = process.env.HOST || '127.0.0.1';
 
 // CORS Configuration
 const corsOptions = {
     origin: 'https://silver-gaufre-6f5db9.netlify.app', // Replace with your actual frontend URL
     optionsSuccessStatus: 200,
 };
+
 app.use(cors(corsOptions));
 
 //Middleware
@@ -632,4 +634,4 @@ app.use((err, req, res, next) => {
 });
 
 // Start the server
-app.listen(port, () => console.log(`Server has started on port ${port}`));
+app.listen(port, host, () => console.log(`Server has started on port ${port}`));
