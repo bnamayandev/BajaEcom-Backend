@@ -167,7 +167,7 @@ const sendEmail = async (emailData) => {
         });
 
         const mailOptions = {
-            from: `"Western Baja SAE" <${process.env.EMAIL_USER}>`,
+            from: `"Western Baja Racing" <${process.env.EMAIL_USER}>`,
             to: email,
             subject: 'Thank You For Your Purchase!',
             text: `Dear ${first_name},
@@ -175,7 +175,7 @@ const sendEmail = async (emailData) => {
 Thank you for your recent purchase with us. Your order #${orderId} has been successfully processed and is ready to pick up at CMLP 63 on ${formattedPickupDate}.
 
 Best regards,
-Western Baja SAE`,
+Western Baja Western Baja Racing`,
             html: `
                 <div style="font-family: Arial, sans-serif; line-height: 1.6;">
                     <h2>Dear ${first_name},</h2>
@@ -186,10 +186,10 @@ Western Baja SAE`,
                         <li><strong>Date & Time:</strong> ${formattedPickupDate}</li>
                     </ul>
                     <p>If you have any questions or need further assistance, feel free to reach out to our support team.</p>
-                    <p>Best regards,<br><strong>Western Baja SAE</strong></p>
+                    <p>Best regards,<br><strong>Western Baja Racing</strong></p>
                     <hr>
                     <p style="font-size: 0.9em; color: #555;">
-                        You are receiving this email because you placed an order with Western Baja SAE. If you believe this was a mistake, please contact our support team.
+                        You are receiving this email because you placed an order with Western Baja Racing. If you believe this was a mistake, please contact our support team.
                     </p>
                 </div>
             `,
