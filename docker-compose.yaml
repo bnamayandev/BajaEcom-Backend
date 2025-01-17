@@ -24,3 +24,5 @@ services:
       - DB_HOST=db
       - DB_PORT=5432
       - DB_NAME=${DB_NAME}
+      - EMAIL_USER=${EMAIL_USER}
+      - EMAIL_PASSWORD=${EMAIL_PASSWORD}
