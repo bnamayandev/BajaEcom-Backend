@@ -128,7 +128,7 @@ const sendEmail = async (emailData) => {
     const { email, first_name, orderId, pickup_date_time } = emailData;
 
     console.log(`Preparing to send email to: ${email}`);
-    console.log(`Sender's email: ${process.env.EMAIL_USER}`);
+    console.log(`Sender's email: ${process.env.EMAIL}`);
 
     try {
         // Configure the transporter
@@ -137,16 +137,17 @@ const sendEmail = async (emailData) => {
             port: 465,
             secure: true,
             auth: {
-                user: process.env.EMAIL_USER, // Sender's email from environment variable
-                pass: process.env.EMAIL_PASSWORD // Email password from environment variable
+                user: 'westernsaebaja@gmail.com', // Update if needed
+                pass: 'wpka ynib iimg zmxu'       // Update if needed
             }
         });
 
         // Define the email options
         const mailOptions = {
-            from: process.env.EMAIL_USER, // Sender's email
-            to: email,                    // Recipient's email
-            subject: 'Thank You For Supporting Western Baja!',
+            from: process.env.EMAIL, // Sender's email
+            to: email,              // Correct recipient field
+            bcc: "ddiacone@uwo.ca",
+            subject: "Thank You For Supporting Western Baja!",
             text: `Dear ${first_name},\n\nThank you for your recent purchase with us. Your order #${orderId} has been successfully processed and is ready to pick up at CMLP 63 on ${pickup_date_time}.\n\nBest regards,\nWestern Baja SAE`,
             html: `<p>Dear ${first_name},</p><p>Thank you for your recent purchase with us. Your order <strong>#${orderId}</strong> has been successfully processed and is ready to pick up at CMLP 63 on ${pickup_date_time}.</p><p>Best regards,<br>Western Baja SAE</p>`
         };
@@ -160,6 +161,7 @@ const sendEmail = async (emailData) => {
         return { success: false, error: error.message };
     }
 };
+
 
 // Create a new order with multiple items
 app.post('/orders', authenticateToken, async (req, res) => {
@@ -248,11 +250,11 @@ app.post('/orders', authenticateToken, async (req, res) => {
         const { email, first_name } = userResult.rows[0];
         console.log(email, first_name);
 
-        const emailResult = await sendEmail({
-            email,
-            first_name,
-            orderId: order.order_id,
-            pickup_date_time
+        const emailResult = await sendEmail({ 
+            email, 
+            first_name, 
+            orderId: order.order_id, 
+            pickup_date_time 
         });
 
         if (!emailResult.success) {
@@ -263,9 +265,9 @@ app.post('/orders', authenticateToken, async (req, res) => {
         await pool.query('COMMIT'); // Commit transaction
         console.info(`[ORDERS] Order created successfully: ${order.order_id}`);
 
-        return res.status(200).json({
-            message: 'Order created successfully',
-            order_id: order.order_id
+        return res.status(200).json({ 
+            message: 'Order created successfully', 
+            order_id: order.order_id 
         });
     } catch (err) {
         await pool.query('ROLLBACK'); // Rollback only if a transaction was started
