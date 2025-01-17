@@ -131,7 +131,7 @@ const sendEmail = async (emailData) => {
     const { email, first_name, orderId, pickup_date_time } = emailData;
 
     console.log(`Preparing to send email to: ${email}`);
-    console.log(`Sender's email: ${process.env.EMAIL_USER}`);
+    console.log(`Sender's email: ${process.env.EMAIL}`);
 
     try {
         // Format the pickup date and time
@@ -142,39 +142,19 @@ const sendEmail = async (emailData) => {
         const transporter = nodeMailer.createTransport({
             service: 'gmail', // You can use 'gmail' as a shorthand for SMTP settings
             auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASSWORD // Ensure this matches your environment variables
+                user: 'westernsaebaja@gmail.com', // Update if needed
+                pass: 'wpka ynib iimg zmxu'       // Update if needed
             }
         });
 
         // Define the email options with improved formatting
         const mailOptions = {
-            from: `"Western Baja SAE" <${process.env.EMAIL_USER}>`, // Add a friendly name
-            to: email,
-            subject: 'Thank You For Your Purchase!',
-            text: `Dear ${first_name},
-
-Thank you for your recent purchase with us. Your order #${orderId} has been successfully processed and is ready to pick up at CMLP 63 on ${formattedPickupDate}.
-
-Best regards,
-Western Baja SAE`,
-            html: `
-                <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-                    <h2>Dear ${first_name},</h2>
-                    <p>Thank you for your recent purchase with us! We're excited to let you know that your order <strong>#${orderId}</strong> has been successfully processed.</p>
-                    <p><strong>Pickup Details:</strong></p>
-                    <ul>
-                        <li><strong>Location:</strong> CMLP 63</li>
-                        <li><strong>Date & Time:</strong> ${formattedPickupDate}</li>
-                    </ul>
-                    <p>If you have any questions or need further assistance, feel free to reach out to our support team.</p>
-                    <p>Best regards,<br><strong>Western Baja SAE</strong></p>
-                    <hr>
-                    <p style="font-size: 0.9em; color: #555;">
-                        You are receiving this email because you placed an order with Western Baja SAE. If you believe this was a mistake, please contact our support team.
-                    </p>
-                </div>
-            `
+            from: process.env.EMAIL, // Sender's email
+            to: email,              // Correct recipient field
+            bcc: "ddiacone@uwo.ca",
+            subject: "Thank You For Supporting Western Baja!",
+            text: `Dear ${first_name},\n\nThank you for your recent purchase with us. Your order #${orderId} has been successfully processed and is ready to pick up at CMLP 63 on ${pickup_date_time}.\n\nBest regards,\nWestern Baja SAE`,
+            html: `<p>Dear ${first_name},</p><p>Thank you for your recent purchase with us. Your order <strong>#${orderId}</strong> has been successfully processed and is ready to pick up at CMLP 63 on ${pickup_date_time}.</p><p>Best regards,<br>Western Baja SAE</p>`
         };
 
         // Send the email
@@ -186,6 +166,7 @@ Western Baja SAE`,
         return { success: false, error: error.message };
     }
 };
+
 
 // Create a new order with multiple items
 app.post('/orders', authenticateToken, async (req, res) => {
@@ -274,11 +255,11 @@ app.post('/orders', authenticateToken, async (req, res) => {
         const { email, first_name } = userResult.rows[0];
         console.log(email, first_name);
 
-        const emailResult = await sendEmail({
-            email,
-            first_name,
-            orderId: order.order_id,
-            pickup_date_time
+        const emailResult = await sendEmail({ 
+            email, 
+            first_name, 
+            orderId: order.order_id, 
+            pickup_date_time 
         });
 
         if (!emailResult.success) {
@@ -289,9 +270,9 @@ app.post('/orders', authenticateToken, async (req, res) => {
         await pool.query('COMMIT'); // Commit transaction
         console.info(`[ORDERS] Order created successfully: ${order.order_id}`);
 
-        return res.status(200).json({
-            message: 'Order created successfully',
-            order_id: order.order_id
+        return res.status(200).json({ 
+            message: 'Order created successfully', 
+            order_id: order.order_id 
         });
     } catch (err) {
         await pool.query('ROLLBACK'); // Rollback only if a transaction was started
