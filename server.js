@@ -23,6 +23,7 @@ const pool = new Pool({
 const allowedOrigins = [
     'https://shopwesternbaja.com',
     'https://silver-gaufre-6f5db9.netlify.app',
+    'http://localhost:5174'
     // Add other allowed origins here
 ];
 
