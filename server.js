@@ -284,7 +284,7 @@ app.post('/forgot-password', async (req, res) => {
         );
 
         // Construct password reset URL (pointing to your frontend, e.g. /reset-password?token=xxx)
-        const resetUrl = `${process.env.CLIENT_URL}/reset-password?token=${resetToken}`;
+        const resetUrl = `https://shopwesternbaja.com/reset-password?token=${resetToken}`;
 
         // Send email with link
         const subject = 'Password Reset Request';
