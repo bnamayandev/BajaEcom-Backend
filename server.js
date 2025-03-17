@@ -327,7 +327,7 @@ app.post('/forgot-password', async (req, res) => {
 app.post('/reset-password', async (req, res) => {
     const { token, newPassword } = req.body;
 
-    if (!token || !newPassword) {
+    if (!newPassword) {
         return res.status(400).json({ error: 'Token and newPassword are required.' });
     }
 
